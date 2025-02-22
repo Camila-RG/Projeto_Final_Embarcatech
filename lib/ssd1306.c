@@ -1,40 +1,5 @@
 #include "ssd1306.h"
 #include "font.h"
-#include "hardware/i2c.h"
-
-#define SSD1306_WIDTH 128
-#define SSD1306_HEIGHT 64
-#define SSD1306_BUFFER_SIZE (SSD1306_WIDTH * SSD1306_HEIGHT / 8)
-
-static uint8_t ssd1306_buffer[SSD1306_BUFFER_SIZE];
-static i2c_inst_t *i2c_instance;
-static uint8_t i2c_address;
-
-static const uint8_t SSD1306_INIT_SEQUENCE[] = {
-    0xAE, // Display off
-    0xA8, 0x3F, // Set multiplex ratio (height - 1)
-    0xD3, 0x00, // Set display offset
-    0x40, // Set start line
-    0xA1, // Set segment re-map
-    0xC8, // Set COM output scan direction
-    0xDA, 0x12, // Set COM pins hardware configuration
-    0x81, 0x7F, // Set contrast control
-    0xA4, // Disable entire display on
-    0xA6, // Set normal display (not inverted)
-    0xD5, 0x80, // Set display clock divide
-    0x8D, 0x14, // Enable charge pump
-    0xAF // Display on
-};
-
-void ssd1306_draw_pixel(int x, int y, bool color) {
-    if (x >= 0 && x < SSD1306_WIDTH && y >= 0 && y < SSD1306_HEIGHT) {
-        if (color) {
-            ssd1306_buffer[x + (y / 8) * SSD1306_WIDTH] |= (1 << (y % 8));
-        } else {
-            ssd1306_buffer[x + (y / 8) * SSD1306_WIDTH] &= ~(1 << (y % 8));
-        }
-    }
-}
 
 void ssd1306_init(ssd1306_t *ssd, uint8_t width, uint8_t height, bool external_vcc, uint8_t address, i2c_inst_t *i2c) {
   ssd->width = width;
@@ -187,29 +152,29 @@ void ssd1306_vline(ssd1306_t *ssd, uint8_t x, uint8_t y0, uint8_t y1, bool value
   for (uint8_t y = y0; y <= y1; ++y)
     ssd1306_pixel(ssd, x, y, value);
 }
-
-// Função para desenhar um caractere
+// Desenha um caractere no display
 void ssd1306_draw_char(ssd1306_t *ssd, char c, uint8_t x, uint8_t y)
 {
-  uint16_t index = 0;
-  char ver=c;
-  if (c >= 'A' && c <= 'Z')
-  {
-    index = (c - 'A' + 11) * 8; // Para letras maiúsculas
-  }else  if (c >= '0' && c <= '9')
-  {
-    index = (c - '0' + 1) * 8; // Adiciona o deslocamento necessário
-  }
-  
-  for (uint8_t i = 0; i < 8; ++i)
-  {
-    uint8_t line = font[index + i];
-    for (uint8_t j = 0; j < 8; ++j)
-    {
-      ssd1306_pixel(ssd, x + i, y + j, line & (1 << j));
+    uint16_t index = 0;
+    if (c >= 'A' && c <= 'Z') {
+        index = (c - 'A' + 11) * 8;  // Offset para maiúsculas
     }
-  }
+    else if (c >= 'a' && c <= 'z') {
+        index = (c - 'a' + 37) * 8;  // Offset para minúsculas
+    }
+    else if (c >= '0' && c <= '9') {
+        index = (c - '0' + 1) * 8;   // Offset para dígitos
+    }
+    
+    // Loop para desenhar os 8 bytes do caractere
+    for (uint8_t i = 0; i < 8; ++i) {
+        uint8_t line = font[index + i];
+        for (uint8_t j = 0; j < 8; ++j) {
+            ssd1306_pixel(ssd, x + i, y + j, line & (1 << j));
+        }
+    }
 }
+
 
 // Função para desenhar uma string
 void ssd1306_draw_string(ssd1306_t *ssd, const char *str, uint8_t x, uint8_t y)

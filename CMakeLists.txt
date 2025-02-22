@@ -59,6 +59,7 @@ target_include_directories(Projeto_Final_Embarcatech PRIVATE
 target_link_libraries(Projeto_Final_Embarcatech 
         hardware_i2c
         hardware_adc
+        hardware_pwm
         )
 
 pico_add_extra_outputs(Projeto_Final_Embarcatech)
