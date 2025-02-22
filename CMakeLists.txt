@@ -35,7 +35,7 @@ pico_sdk_init()
 
 # Add executable. Default name is the project name, version 0.1
 
-add_executable(Projeto_Final_Embarcatech Projeto_Final_Embarcatech.c lib/display.h)
+add_executable(Projeto_Final_Embarcatech Projeto_Final_Embarcatech.c lib/ssd1306.c)
 
 pico_set_program_name(Projeto_Final_Embarcatech "Projeto_Final_Embarcatech")
 pico_set_program_version(Projeto_Final_Embarcatech "0.1")
@@ -46,7 +46,9 @@ pico_enable_stdio_usb(Projeto_Final_Embarcatech 1)
 
 # Add the standard library to the build
 target_link_libraries(Projeto_Final_Embarcatech
-        pico_stdlib)
+        pico_stdlib
+        
+)
 
 # Add the standard include files to the build
 target_include_directories(Projeto_Final_Embarcatech PRIVATE
@@ -55,7 +57,8 @@ target_include_directories(Projeto_Final_Embarcatech PRIVATE
 
 # Add any user requested libraries
 target_link_libraries(Projeto_Final_Embarcatech 
-        
+        hardware_i2c
+        hardware_adc
         )
 
 pico_add_extra_outputs(Projeto_Final_Embarcatech)
