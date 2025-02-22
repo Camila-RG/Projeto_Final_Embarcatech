@@ -19,7 +19,7 @@
 #define MENU_Y 20
 #define MENU_WIDTH 128
 #define MENU_HEIGHT 16
-#define CURSOR_WIDTH 60
+#define CURSOR_WIDTH 10
 #define CURSOR_HEIGHT 10
 
 int main()
@@ -73,12 +73,12 @@ int main()
         ssd1306_send_data(&ssd);
 
         // Desenha o título
-        ssd1306_draw_string(&ssd, "Menu", 30, 0);
+        ssd1306_draw_string(&ssd, "Menu Principal", 30, 0);
 
         // Desenha as opções do menu
-        ssd1306_draw_string(&ssd, "1 Modo Estimulo", MENU_X, MENU_Y + (MENU_HEIGHT * 0));  // Primeira opção
-        ssd1306_draw_string(&ssd, "2 Modo Sensivel", MENU_X, MENU_Y + (MENU_HEIGHT * 1));  // Segunda opção
-        ssd1306_draw_string(&ssd, "3 Modo Alerta", MENU_X, MENU_Y + (MENU_HEIGHT * 2));  // Terceira opção
+        ssd1306_draw_string(&ssd, "1. Opcao 1", MENU_X, MENU_Y + (MENU_HEIGHT * 0));  // Primeira opção
+        ssd1306_draw_string(&ssd, "2. Opcao 2", MENU_X, MENU_Y + (MENU_HEIGHT * 1));  // Segunda opção
+        ssd1306_draw_string(&ssd, "3. Opcao 3", MENU_X, MENU_Y + (MENU_HEIGHT * 2));  // Terceira opção
 
         // Desenha o cursor (apenas a borda)
         ssd1306_rect(&ssd, MENU_X - 10, MENU_Y + menu_cursor * MENU_HEIGHT, CURSOR_WIDTH, CURSOR_HEIGHT, true, false); // Cursor vazio (bordas)
