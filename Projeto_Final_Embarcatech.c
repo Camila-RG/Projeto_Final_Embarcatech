@@ -1,4 +1,3 @@
-
 #include <stdio.h>
 #include <stdlib.h>
 #include "pico/stdlib.h"
@@ -16,14 +15,15 @@
 #define JOYSTICK_PB 22 // GPIO para botão do Joystick
 #define Botao_A 5 // GPIO para botão A
 
-#define MENU_OPTION_COUNT 3
 #define MENU_X 10
-#define MENU_Y 10
-#define MENU_HEIGHT 12
-#define CURSOR_WIDTH 60
+#define MENU_Y 20
+#define MENU_WIDTH 128
+#define MENU_HEIGHT 16
+#define CURSOR_WIDTH 10
 #define CURSOR_HEIGHT 10
 
-int main() {
+int main()
+{
     gpio_init(JOYSTICK_PB);
     gpio_set_dir(JOYSTICK_PB, GPIO_IN);
     gpio_pull_up(JOYSTICK_PB); 
@@ -43,65 +43,78 @@ int main() {
     ssd1306_init(&ssd, WIDTH, HEIGHT, false, endereco, I2C_PORT); // Inicializa o display
     ssd1306_config(&ssd); // Configura o display
     ssd1306_send_data(&ssd); // Envia os dados para o display
-
-    // Limpa o display. O display inicia com todos os pixels apagados.
-    ssd1306_fill(&ssd, false);
+    ssd1306_fill(&ssd, false); // Limpa o display
     ssd1306_send_data(&ssd);
 
+    // Inicializando os ADCs para leitura do Joystick
     adc_init();
     adc_gpio_init(JOYSTICK_X_PIN);
-    adc_gpio_init(JOYSTICK_Y_PIN);  
+    adc_gpio_init(JOYSTICK_Y_PIN);
 
     uint16_t adc_value_x;
-    uint16_t adc_value_y;  
-    char str_x[5];  // Buffer para armazenar a string
-    char str_y[5];  // Buffer para armazenar a string  
+    uint16_t adc_value_y;
+    char str_x[5];
+    char str_y[5];
 
-    int menu_cursor = 0; // Índice da opção do menu selecionada
     bool cor = true;
+    int menu_cursor = 0;  // Índice do item selecionado
 
-    while (true) {
-        adc_select_input(0); // Seleciona o ADC para eixo X. O pino 26 como entrada analógica
+    while (true)
+    {
+        adc_select_input(0); // Seleciona o ADC para eixo X
         adc_value_x = adc_read();
-        adc_select_input(1); // Seleciona o ADC para eixo Y. O pino 27 como entrada analógica
-        adc_value_y = adc_read();    
+        adc_select_input(1); // Seleciona o ADC para eixo Y
+        adc_value_y = adc_read();
+        sprintf(str_x, "%d", adc_value_x);  // Converte o valor de X em string
+        sprintf(str_y, "%d", adc_value_y);  // Converte o valor de Y em string
 
-        sprintf(str_x, "%d", adc_value_x);  // Converte o inteiro em string
-        sprintf(str_y, "%d", adc_value_y);  // Converte o inteiro em string
+        // Limpa o display e desenha o menu
+        ssd1306_fill(&ssd, false); // Limpa a tela
+        ssd1306_send_data(&ssd);
 
-        // Atualiza o conteúdo do display com animações
-        ssd1306_fill(&ssd, !cor); // Limpa o display
-        ssd1306_rect(&ssd, 3, 3, 122, 60, cor, !cor); // Desenha um retângulo
+        // Desenha o título
+        ssd1306_draw_string(&ssd, "Menu Principal", 30, 0);
 
-        // Desenhar o menu
-        ssd1306_draw_string(&ssd, "MENU", 50, 0);  // Título do menu
+        // Desenha as opções do menu
+        ssd1306_draw_string(&ssd, "1. Opcao 1", MENU_X, MENU_Y + (MENU_HEIGHT * 0));  // Primeira opção
+        ssd1306_draw_string(&ssd, "2. Opcao 2", MENU_X, MENU_Y + (MENU_HEIGHT * 1));  // Segunda opção
+        ssd1306_draw_string(&ssd, "3. Opcao 3", MENU_X, MENU_Y + (MENU_HEIGHT * 2));  // Terceira opção
 
-        // Desenhar as opções do menu
-        char* menu_options[MENU_OPTION_COUNT] = {"Opção 1", "Opção 2", "Opção 3"};
-        for (int i = 0; i < MENU_OPTION_COUNT; i++) {
-            ssd1306_draw_string(&ssd, menu_options[i], MENU_X, MENU_Y + i * MENU_HEIGHT);
+        // Desenha o cursor (apenas a borda)
+        ssd1306_rect(&ssd, MENU_X - 10, MENU_Y + menu_cursor * MENU_HEIGHT, CURSOR_WIDTH, CURSOR_HEIGHT, true, false); // Cursor vazio (bordas)
+
+        // Atualiza o display
+        ssd1306_send_data(&ssd);
+
+        // Lógica para navegação no menu usando o joystick
+        if (adc_value_y < 2000) // Joystick para cima
+        {
+            menu_cursor--;
+            if (menu_cursor < 0)
+                menu_cursor = 2; // Vai para a última opção se subir no topo
+            sleep_ms(150); // Debounce do joystick
+        }
+        else if (adc_value_y > 3000) // Joystick para baixo
+        {
+            menu_cursor++;
+            if (menu_cursor > 2)
+                menu_cursor = 0; // Vai para a primeira opção se descer no fundo
+            sleep_ms(150); // Debounce do joystick
         }
 
-        // Desenhar o cursor como um retângulo
-        ssd1306_rect(&ssd, MENU_X - 10, MENU_Y + menu_cursor * MENU_HEIGHT, CURSOR_WIDTH, CURSOR_HEIGHT, true, true); // Cursor
-
-
-        // Navegação no menu com o joystick
-        if (adc_value_y > 3500 && menu_cursor > 0) {
-            menu_cursor--; // Move para cima
-        }
-        if (adc_value_y < 1000 && menu_cursor < MENU_OPTION_COUNT - 1) {
-            menu_cursor++; // Move para baixo
-        }
-
-        // Seleção de opção com o botão
-        if (gpio_get(JOYSTICK_PB) == 0) {
-            // Aqui você pode adicionar o código para executar ações dependendo da opção selecionada
-            printf("Opção selecionada: %d\n", menu_cursor + 1); // Para depuração
+        // Ação do botão (apertando o joystick)
+        if (!gpio_get(JOYSTICK_PB)) // Se o botão for pressionado
+        {
+            // Adicione aqui a lógica de ação ao pressionar o botão
+            // Exemplo: Display da opção selecionada
+            char option[20];
+            snprintf(option, sizeof(option), "Opção %d Selecionada", menu_cursor + 1);
+            ssd1306_fill(&ssd, false); // Limpa a tela
+            ssd1306_draw_string(&ssd, option, 10, 30); // Exibe a opção selecionada
+            ssd1306_send_data(&ssd);
+            sleep_ms(1000); // Mostra por um tempo e volta ao menu
         }
 
-        ssd1306_send_data(&ssd); // Atualiza o display
-
-        sleep_ms(100);  // Aguarda um pouco para a próxima iteração
+        sleep_ms(50); // Delay para evitar leitura excessiva
     }
 }
