@@ -33,6 +33,8 @@ project(Projeto_Final_Embarcatech C CXX ASM)
 # Initialise the Raspberry Pi Pico SDK
 pico_sdk_init()
 
+file(GLOB ASSETSOURCES "anim/*.c")
+
 # Add executable. Default name is the project name, version 0.1
 
 add_executable(Projeto_Final_Embarcatech Projeto_Final_Embarcatech.c lib/ssd1306.c lib/init.c)

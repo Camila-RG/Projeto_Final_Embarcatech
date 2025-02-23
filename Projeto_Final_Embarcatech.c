@@ -26,7 +26,7 @@ typedef struct {
 
 // Menus e submenus
 Menu main_menu = {"MENU", {"1Sensivel", "2Estimulo", "3Modo Alerta"}};
-Menu submenu1 = {"Sensivel", {"Modo tranquilizante", "Monitoramento de ruidos", "Voltar"}};
+Menu submenu1 = {"Sensivel", {"Modo tranquilizante", "Monitoramento ruidos", "Voltar"}};
 Menu submenu2 = {"Estimulo", {"Visuais", "Sonoros", "Voltar"}};
 Menu submenu3 = {"Falante", {"Sentimentos", "Acoes", "Voltar"}};
 
