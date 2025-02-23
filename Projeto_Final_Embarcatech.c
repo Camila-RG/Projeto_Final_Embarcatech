@@ -12,7 +12,9 @@
 #define JOY_X 26
 #define JOY_Y 27
 #define JOY_BUTTON 22
-#define BACK_BUTTON 6  // Botão para voltar ao menu principal
+#define BUTTON_A 5  // Botão para voltar ao menu principal
+
+int estado_atual = 1;
 
 // Endereço I2C do display
 #define SSD1306_ADDR 0x3C
@@ -56,7 +58,7 @@ void draw_menu() {
 }
 
 // Callback da interrupção do botão do joystick
-void button_callback(uint gpio, uint32_t events) {
+void gpio_irq_handler(uint gpio, uint32_t events) {
     if (gpio == JOY_BUTTON) {
         if (current_menu == &main_menu) {
             switch (menu_option) {
@@ -64,12 +66,15 @@ void button_callback(uint gpio, uint32_t events) {
                 case 1: current_menu = &submenu2; break;
                 case 2: current_menu = &submenu3; break;
             }
-        } else {
-            // Se for um submenu e a opção selecionada for "Voltar", volta ao menu principal
-            if (menu_option == 2) { 
-                current_menu = &main_menu;
-            }
         }
+        menu_option = 0;
+        draw_menu();
+    }
+    // Se for um submenu e a opção selecionada for "Voltar", volta ao menu principal
+    if (gpio_get(BUTTON_A) != estado_atual ) { 
+        sleep_ms(200);
+        current_menu != &main_menu;
+        estado_atual = 1;
         menu_option = 0;
         draw_menu();
     }
@@ -84,6 +89,9 @@ int read_joy_y() {
 
 void setup() {
     stdio_init_all();
+    gpio_init(BUTTON_A);
+    gpio_set_dir(BUTTON_A, GPIO_IN);
+    gpio_pull_up(BUTTON_A);
     i2c_init(i2c1, 400 * 1000);
     gpio_set_function(I2C_SDA, GPIO_FUNC_I2C);
     gpio_set_function(I2C_SCL, GPIO_FUNC_I2C);
@@ -97,7 +105,7 @@ void setup() {
     gpio_init(JOY_BUTTON);
     gpio_set_dir(JOY_BUTTON, GPIO_IN);
     gpio_pull_up(JOY_BUTTON);
-    gpio_set_irq_enabled_with_callback(JOY_BUTTON, GPIO_IRQ_EDGE_FALL, true, &button_callback);
+    gpio_set_irq_enabled_with_callback(JOY_BUTTON, GPIO_IRQ_EDGE_FALL, true, &gpio_irq_handler);
     draw_menu();
 }
 
