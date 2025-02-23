@@ -42,7 +42,7 @@ void draw_menu() {
     for (int i = 0; i < menu_size; i++) {
         if (i == menu_option) {
             // Desenha o ">" antes da opção selecionada
-            ssd1306_draw_string(&oled, "O", 10, i * 10 + 16);
+            ssd1306_draw_string(&oled, "0", 10, i * 10 + 16);
             ssd1306_command(&oled, SET_NORM_INV);  // Inverte as cores para o texto da opção
             ssd1306_draw_string(&oled, menu_items[i], 24, i * 10 + 16); // Desenha a opção selecionada com cores invertidas
             ssd1306_command(&oled, SET_NORM_INV);  // Restaura as cores normais
