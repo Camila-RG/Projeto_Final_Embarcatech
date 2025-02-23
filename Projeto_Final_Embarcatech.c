@@ -3,8 +3,8 @@
 #include "hardware/i2c.h"
 #include "hardware/adc.h"
 #include "hardware/gpio.h"
-#include "lib/ssd1306.h"  // Certifique-se de incluir o cabeçalho correto
-#include "lib/font.h"     // Inclua o cabeçalho da fonte (caso use fontes externas)
+#include "lib/ssd1306.h"
+#include "lib/font.h"
 
 // Definição dos pinos
 #define I2C_SDA 14
@@ -41,7 +41,7 @@ void draw_menu() {
     // Desenha as opções do menu
     for (int i = 0; i < menu_size; i++) {
         if (i == menu_option) {
-            // Desenha o ">" antes da opção selecionada
+            // Desenha o "0" antes da opção selecionada
             ssd1306_draw_string(&oled, "0", 10, i * 10 + 16);
             ssd1306_command(&oled, SET_NORM_INV);  // Inverte as cores para o texto da opção
             ssd1306_draw_string(&oled, menu_items[i], 24, i * 10 + 16); // Desenha a opção selecionada com cores invertidas
