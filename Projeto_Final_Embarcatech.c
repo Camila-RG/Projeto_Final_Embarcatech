@@ -137,7 +137,7 @@ void button_callback(uint gpio, uint32_t events) {
 }
 
 // Navegação joystick
-void loop() {
+void joy_navigation() {
     int y_value = read_joy_y();
 
     if (y_value < 1000) {
@@ -162,6 +162,6 @@ int main() {
 
     draw_menu();
     while (1) {
-        loop();
+        joy_navigation();
     }
 }
