@@ -6,17 +6,9 @@
 #include "lib/ssd1306.h"
 #include "lib/font.h"
 #include "hardware/timer.h"
+#include "lib/init.h"
 
-// Definição dos pinos
-#define I2C_SDA 14
-#define I2C_SCL 15
-#define JOY_X 26
-#define JOY_Y 27
-#define JOY_BUTTON 22
-#define BUTTON_A 5  // Botão para voltar ao menu principal
-#define LED_G_PIN 11  // LED verde
-#define LED_B_PIN 12  // LED azul
-#define LED_R_PIN 13  // LED vermelho
+ssd1306_t oled;
 
 // Tempo de debouncing
 static volatile uint32_t last_joy_button_time = 0;
@@ -24,12 +16,6 @@ static volatile uint32_t last_joy_button_time = 0;
 
 int estado_atual_botao_a = 1;  // Estado inicial do botão A
 static volatile uint32_t last_time = 0; // Armazena o tempo do último evento (em microssegundos)
-
-// Endereço I2C do display
-#define SSD1306_ADDR 0x3C
-
-// Inicializa o display
-ssd1306_t oled;
 
 // Estrutura para os menus
 typedef struct {
@@ -150,47 +136,6 @@ void button_callback(uint gpio, uint32_t events) {
     }
 }
 
-// Função para configurar os pinos e iniciar o display
-void setup() {
-    stdio_init_all();
-
-    gpio_init(BUTTON_A);
-    gpio_set_dir(BUTTON_A, GPIO_IN);
-    gpio_pull_up(BUTTON_A);
-
-    gpio_init(LED_G_PIN);  // Inicializa o LED verde
-    gpio_set_dir(LED_G_PIN, GPIO_OUT);  // Configura como saída
-
-    gpio_init(LED_B_PIN);  // Inicializa o LED azul
-    gpio_set_dir(LED_B_PIN, GPIO_OUT);  // Configura como saída
-
-    gpio_init(LED_R_PIN);  // Inicializa o LED vermelho
-    gpio_set_dir(LED_R_PIN, GPIO_OUT);  // Configura como saída
-
-    i2c_init(i2c1, 400 * 1000);
-    gpio_set_function(I2C_SDA, GPIO_FUNC_I2C);
-    gpio_set_function(I2C_SCL, GPIO_FUNC_I2C);
-    gpio_pull_up(I2C_SDA);
-    gpio_pull_up(I2C_SCL);
-
-    ssd1306_init(&oled, 128, 64, false, SSD1306_ADDR, i2c1);
-    ssd1306_config(&oled);
-    adc_init();
-    adc_gpio_init(JOY_X);
-    adc_gpio_init(JOY_Y);
-    gpio_init(JOY_BUTTON);
-    gpio_set_dir(JOY_BUTTON, GPIO_IN);
-    gpio_pull_up(JOY_BUTTON);
-
-    // Configuração da interrupção para o botão A com callback e debouncing
-    gpio_set_irq_enabled_with_callback(BUTTON_A, GPIO_IRQ_EDGE_FALL, true, &button_a_callback);
-
-    // Configuração da interrupção para o botão do joystick com debounce
-    gpio_set_irq_enabled_with_callback(JOY_BUTTON, GPIO_IRQ_EDGE_FALL, true, &button_callback);
-
-    draw_menu();
-}
-
 // Navegação joystick
 void loop() {
     int y_value = read_joy_y();
@@ -208,6 +153,14 @@ void loop() {
 
 int main() {
     setup();
+    
+    // Configuração da interrupção para o botão A com callback e debouncing
+    gpio_set_irq_enabled_with_callback(BUTTON_A, GPIO_IRQ_EDGE_FALL, true, &button_a_callback);
+
+    // Configuração da interrupção para o botão do joystick com debounce
+    gpio_set_irq_enabled_with_callback(JOY_BUTTON, GPIO_IRQ_EDGE_FALL, true, &button_callback);
+
+    draw_menu();
     while (1) {
         loop();
     }
