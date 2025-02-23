@@ -23,16 +23,17 @@ ssd1306_t oled;
 #define menu_size 3
 int menu_option = 0;
 const char *menu_items[] = {
-    "1Option",
-    "2Option",
-    "3Option"
+    "1Sensivel",
+    "2Estimulo",
+    "3Modo Alerta"
 };
+
+// Função para desenhar o menu
 void draw_menu() {
     // Limpa a tela
     ssd1306_fill(&oled, 0);
-
-    // Desenha a borda ao redor do menu
-    ssd1306_rect(&oled, 0, 0, 127, 63, 1, 0); // Borda (não preenchido)
+    ssd1306_rect(&oled, 0, 0, 127, 63, 1, 0); // Borda do display (não preenchido)
+    ssd1306_rect(&oled, 10, 0, 127, 50, 1, 0); // Borda do menu (não preenchido)
 
     // Desenha o título do menu
     ssd1306_draw_string(&oled, "MENU", 48, 2); // Título do menu (ajustado para 48 para centralizar melhor)
@@ -40,17 +41,13 @@ void draw_menu() {
     // Desenha as opções do menu
     for (int i = 0; i < menu_size; i++) {
         if (i == menu_option) {
-            // Desenha um retângulo de destaque na opção selecionada
-            ssd1306_rect(&oled, 5, i * 10 + 16, 118, 10, 1, true); // Preenchido (destaque)
-            
-            // Desenha o indicador ">" e a opção com texto invertido (destaque)
-            ssd1306_draw_string(&oled, "o", 10, i * 10 + 16);
-            // Usamos o comando de inversão de cores
-            ssd1306_command(&oled, SET_NORM_INV);  // Inverte cores para o texto
-            ssd1306_draw_string(&oled, menu_items[i], 24, i * 10 + 16);
+            // Desenha o ">" antes da opção selecionada
+            ssd1306_draw_string(&oled, "O", 10, i * 10 + 16);
+            ssd1306_command(&oled, SET_NORM_INV);  // Inverte as cores para o texto da opção
+            ssd1306_draw_string(&oled, menu_items[i], 24, i * 10 + 16); // Desenha a opção selecionada com cores invertidas
             ssd1306_command(&oled, SET_NORM_INV);  // Restaura as cores normais
         } else {
-            // Desenha a opção do menu sem destaque
+            // Desenha as opções não selecionadas
             ssd1306_draw_string(&oled, menu_items[i], 24, i * 10 + 16);
         }
     }
