@@ -60,6 +60,7 @@ target_link_libraries(Projeto_Final_Embarcatech
         hardware_i2c
         hardware_adc
         hardware_pwm
+        hardware_pio
         )
 
 pico_add_extra_outputs(Projeto_Final_Embarcatech)

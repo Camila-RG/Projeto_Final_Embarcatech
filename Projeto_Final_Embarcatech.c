@@ -7,6 +7,7 @@
 #include "lib/font.h"
 #include "hardware/timer.h"
 #include "lib/init.h"
+#include "lib/ws2812.pio.h"
 
 ssd1306_t oled;
 
@@ -57,22 +58,6 @@ void draw_menu() {
         }
     }
     ssd1306_send_data(&oled);
-}
-
-// Função de interrupção do botão A com debouncing
-static void button_a_callback(uint gpio, uint32_t events) {
-    uint32_t current_time = to_us_since_boot(get_absolute_time());
-
-    // Verifica se passou tempo suficiente para evitar bouncing (200ms)
-    if (current_time - last_time > 200000) {
-        last_time = current_time;  // Atualiza o tempo do último evento
-
-        if (gpio == BUTTON_A) {
-            current_menu = &main_menu;  // Volta ao menu principal
-            menu_option = 0;  // Reseta a opção do menu
-            draw_menu();  // Desenha o menu novamente
-        }
-    }
 }
 
 // Callback da interrupção do botão do joystick com debounce
@@ -152,11 +137,12 @@ void joy_navigation() {
 }
 
 int main() {
-    setup();
-    
-    // Configuração da interrupção para o botão A com callback e debouncing
-    gpio_set_irq_enabled_with_callback(BUTTON_A, GPIO_IRQ_EDGE_FALL, true, &button_a_callback);
+    PIO pio = pio0;
+    int sm = 0;
+    uint offset = pio_add_program(pio, &ws2812_program);
+    ws2812_program_init(pio, sm, offset, WS2812_PIN, 800000, IS_RGBW);
 
+    setup();
     // Configuração da interrupção para o botão do joystick com debounce
     gpio_set_irq_enabled_with_callback(JOY_BUTTON, GPIO_IRQ_EDGE_FALL, true, &button_callback);
 
