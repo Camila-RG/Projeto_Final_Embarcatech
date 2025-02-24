@@ -22,5 +22,6 @@ void show_frame(const uint32_t frame[25]);
 void show_animation(const uint32_t animation[][25], int frame_count, int delay_ms);
 void display_static_color(uint32_t color);
 void run_visual_mode();
+void setup_pio();
 
 #endif // MATRIZ_LEDS_H

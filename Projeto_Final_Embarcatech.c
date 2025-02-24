@@ -138,8 +138,7 @@ void joy_navigation() {
 }
 
 int main() {
-    uint offset = pio_add_program(pio, &ws2812_program);
-    ws2812_program_init(pio, sm, offset, WS2812_PIN, 800000, IS_RGBW);
+    setup_pio();
     setup();
     pwm_init_buzzer(BUZZER_PIN);
     // Configuração da interrupção para o botão do joystick com debounce
@@ -147,6 +146,7 @@ int main() {
     draw_menu();
     while (1) {
         joy_navigation();
+        run_visual_mode();
     }
     return 0;
 }

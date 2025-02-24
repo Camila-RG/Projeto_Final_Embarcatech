@@ -47,6 +47,11 @@ void display_static_color(uint32_t color) {
     }
 }
 
+void setup_pio(){
+    uint offset = pio_add_program(pio, &ws2812_program);
+        ws2812_program_init(pio, sm, offset, WS2812_PIN, 800000, IS_RGBW);
+}
+
 // Exemplo de chamada
 void run_visual_mode() {
     static const uint32_t anim3[18][25] = {
