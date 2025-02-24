@@ -7,7 +7,11 @@
 #include "lib/font.h"
 #include "hardware/timer.h"
 #include "lib/init.h"
-#include "lib/ws2812.pio.h"
+#include "ws2812.pio.h"
+
+#define IS_RGBW false
+#define NUM_PIXELS 25
+#define WS2812_PIN 7
 
 ssd1306_t oled;
 
@@ -136,12 +140,13 @@ void joy_navigation() {
     }
 }
 
+
+
 int main() {
     PIO pio = pio0;
     int sm = 0;
     uint offset = pio_add_program(pio, &ws2812_program);
     ws2812_program_init(pio, sm, offset, WS2812_PIN, 800000, IS_RGBW);
-
     setup();
     // Configuração da interrupção para o botão do joystick com debounce
     gpio_set_irq_enabled_with_callback(JOY_BUTTON, GPIO_IRQ_EDGE_FALL, true, &button_callback);

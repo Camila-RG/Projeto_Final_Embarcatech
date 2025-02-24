@@ -39,6 +39,8 @@ file(GLOB ASSETSOURCES "anim/*.c")
 
 add_executable(Projeto_Final_Embarcatech Projeto_Final_Embarcatech.c lib/ssd1306.c lib/init.c)
 
+pico_generate_pio_header(Projeto_Final_Embarcatech ${CMAKE_CURRENT_LIST_DIR}/ws2812.pio)
+
 pico_set_program_name(Projeto_Final_Embarcatech "Projeto_Final_Embarcatech")
 pico_set_program_version(Projeto_Final_Embarcatech "0.1")
 
@@ -63,6 +65,7 @@ target_link_libraries(Projeto_Final_Embarcatech
         hardware_adc
         hardware_pwm
         hardware_pio
+        hardware_clocks
         )
 
 pico_add_extra_outputs(Projeto_Final_Embarcatech)
