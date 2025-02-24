@@ -34,10 +34,10 @@ project(Projeto_Final_Embarcatech C CXX ASM)
 pico_sdk_init()
 
 file(GLOB ASSETSOURCES "anim/*.c")
-
+file(GLOB LIBSOURCES "lib/*.c")
 # Add executable. Default name is the project name, version 0.1
 
-add_executable(Projeto_Final_Embarcatech Projeto_Final_Embarcatech.c lib/ssd1306.c lib/init.c)
+add_executable(Projeto_Final_Embarcatech Projeto_Final_Embarcatech.c lib/ssd1306.c lib/init.c lib/buzzer.c)
 
 pico_generate_pio_header(Projeto_Final_Embarcatech ${CMAKE_CURRENT_LIST_DIR}/ws2812.pio)
 

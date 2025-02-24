@@ -8,6 +8,7 @@
 #include "hardware/timer.h"
 #include "lib/init.h"
 #include "ws2812.pio.h"
+#include "lib/buzzer.h"
 
 #define IS_RGBW false
 #define NUM_PIXELS 25
@@ -108,6 +109,7 @@ void button_callback(uint gpio, uint32_t events) {
                         break;
                     case 1: // Ação para "Sonoros"
                         printf("Modo sonoro ativado!\n");
+                        play_star_wars(BUZZER_PIN);
                         draw_menu();
                         break;
                     case 2: current_menu = &main_menu; break; // Volta ao menu principal
@@ -329,6 +331,7 @@ int main() {
     uint offset = pio_add_program(pio, &ws2812_program);
     ws2812_program_init(pio, sm, offset, WS2812_PIN, 800000, IS_RGBW);
     setup();
+    pwm_init_buzzer(BUZZER_PIN);
     // Configuração da interrupção para o botão do joystick com debounce
     gpio_set_irq_enabled_with_callback(JOY_BUTTON, GPIO_IRQ_EDGE_FALL, true, &button_callback);
     draw_menu();
@@ -336,4 +339,5 @@ int main() {
         run_visual_mode();
         joy_navigation();
     }
+    return 0;
 }
