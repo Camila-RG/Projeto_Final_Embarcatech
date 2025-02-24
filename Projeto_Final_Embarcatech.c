@@ -9,18 +9,7 @@
 #include "lib/init.h"
 #include "ws2812.pio.h"
 #include "lib/buzzer.h"
-
-#define IS_RGBW false
-#define NUM_PIXELS 25
-#define WS2812_PIN 7
-PIO pio = pio0;
-int sm = 0;
-ssd1306_t oled;
-
-// Variáveis globais para armazenar a cor (Entre 0 e 255 para intensidade)
-uint8_t led_r = 0;
-uint8_t led_g = 0;
-uint8_t led_b = 200;
+#include "lib/matriz_leds.h"
 
 // Tempo de debouncing
 static volatile uint32_t last_joy_button_time = 0;
@@ -28,6 +17,7 @@ static volatile uint32_t last_joy_button_time = 0;
 
 int estado_atual_botao_a = 1;  // Estado inicial do botão A
 static volatile uint32_t last_time = 0; // Armazena o tempo do último evento (em microssegundos)
+ssd1306_t oled;
 
 // Estrutura para os menus
 typedef struct {
@@ -109,7 +99,6 @@ void button_callback(uint gpio, uint32_t events) {
                         break;
                     case 1: // Ação para "Sonoros"
                         printf("Modo sonoro ativado!\n");
-                        play_star_wars(BUZZER_PIN);
                         draw_menu();
                         break;
                     case 2: current_menu = &main_menu; break; // Volta ao menu principal
@@ -148,185 +137,6 @@ void joy_navigation() {
     }
 }
 
-
-extern PIO pio;
-extern int sm;
-
-// Função para definir a cor de um pixel específico
-void set_pixel_color(uint32_t *pixels, int index, uint32_t color) {
-    if (index >= 0 && index < NUM_PIXELS) {
-        pixels[index] = color;
-    }
-}
-
-// Função para exibir um frame da animação na matriz WS2812
-void show_frame(const uint32_t frame[25]) {
-    for (int row = 4; row >= 0; row--) {  // Inverte a ordem das linhas
-        for (int col = 0; col < 5; col++) {
-            int index = row * 5 + col;
-            uint32_t color = frame[index];
-
-            // Converte de RGB para GRB
-            uint8_t r = (color >> 16) & 0xFF;
-            uint8_t g = (color >> 8) & 0xFF;
-            uint8_t b = color & 0xFF;
-            uint32_t corrected_color = (g << 16) | (r << 8) | b;
-
-            pio_sm_put_blocking(pio, sm, corrected_color);
-        }
-    }
-}
-
-
-// Função para percorrer os frames da animação e exibir na matriz de LEDs
-void show_animation(const uint32_t animation[][25], int frame_count, int delay_ms) {
-    for (int i = 0; i < frame_count; i++) {
-        show_frame(animation[i]);
-        sleep_ms(delay_ms);
-    }
-}
-
-// Função para exibir uma cor sólida na matriz de LEDs
-void display_static_color(uint32_t color) {
-    for (int i = 0; i < NUM_PIXELS; i++) {
-        pio_sm_put_blocking(pio, sm, color);
-    }
-}
-
-// Exemplo de chamada
-void run_visual_mode() {
-    static const uint32_t anim3[18][25] = {
-        {
-            0xff713317, 0xff713317, 0xff713317, 0xff713317, 0xff713317, 
-            0xff713317, 0xff713317, 0xff713317, 0xff713317, 0xff713317, 
-            0xff713317, 0xff713317, 0xff713317, 0xff713317, 0xff713317, 
-            0xff713317, 0xff713317, 0xff713317, 0xff713317, 0xff713317, 
-            0xff713317, 0xff713317, 0xff713317, 0xff713317, 0xff713317
-            },
-            {
-            0xff713317, 0xff713317, 0xff713317, 0xff713317, 0xff713317, 
-            0xff713317, 0xff713317, 0xff713317, 0xff713317, 0xff713317, 
-            0xff713317, 0xff713317, 0xff713317, 0xff713317, 0xff713317, 
-            0xff713317, 0xff713317, 0xff713317, 0xff713317, 0xff713317, 
-            0xff1ec6cf, 0xff713317, 0xff713317, 0xff713317, 0xff713317
-            },
-            {
-            0xff713317, 0xff713317, 0xff713317, 0xff713317, 0xff713317, 
-            0xff713317, 0xff713317, 0xff713317, 0xff713317, 0xff713317, 
-            0xff713317, 0xff713317, 0xff713317, 0xff713317, 0xff713317, 
-            0xff713317, 0xff1ec6cf, 0xff713317, 0xff713317, 0xff713317, 
-            0xff1ec6cf, 0xff1ec6cf, 0xff713317, 0xff713317, 0xff713317
-            },
-            {
-            0xff713317, 0xff713317, 0xff713317, 0xff713317, 0xff713317, 
-            0xff713317, 0xff713317, 0xff713317, 0xff713317, 0xff713317, 
-            0xff713317, 0xff713317, 0xff1ec6cf, 0xff713317, 0xff713317, 
-            0xff713317, 0xff1ec6cf, 0xff1ec6cf, 0xff713317, 0xff713317, 
-            0xff1ec6cf, 0xff1ec6cf, 0xff1ec6cf, 0xff713317, 0xff713317
-            },
-            {
-            0xff713317, 0xff713317, 0xff713317, 0xff713317, 0xff713317, 
-            0xff713317, 0xff713317, 0xff713317, 0xff1ec6cf, 0xff713317, 
-            0xff713317, 0xff713317, 0xff1ec6cf, 0xff1ec6cf, 0xff713317, 
-            0xff713317, 0xff1ec6cf, 0xff1ec6cf, 0xff1ec6cf, 0xff713317, 
-            0xff1ec6cf, 0xff1ec6cf, 0xff1ec6cf, 0xff1ec6cf, 0xff713317
-            },
-            {
-            0xff713317, 0xff713317, 0xff713317, 0xff713317, 0xff1ec6cf, 
-            0xff713317, 0xff713317, 0xff713317, 0xff1ec6cf, 0xff1ec6cf, 
-            0xff713317, 0xff713317, 0xff1ec6cf, 0xff1ec6cf, 0xff1ec6cf, 
-            0xff713317, 0xff1ec6cf, 0xff1ec6cf, 0xff1ec6cf, 0xff1ec6cf, 
-            0xff1ec6cf, 0xff1ec6cf, 0xff1ec6cf, 0xff1ec6cf, 0xff1ec6cf
-            },
-            {
-            0xff713317, 0xff713317, 0xff713317, 0xff1ec6cf, 0xff1ec6cf, 
-            0xff713317, 0xff713317, 0xff1ec6cf, 0xff1ec6cf, 0xff1ec6cf, 
-            0xff713317, 0xff1ec6cf, 0xff1ec6cf, 0xff1ec6cf, 0xff1ec6cf, 
-            0xff1ec6cf, 0xff1ec6cf, 0xff1ec6cf, 0xff1ec6cf, 0xff1ec6cf, 
-            0xff1ec6cf, 0xff1ec6cf, 0xff1ec6cf, 0xff1ec6cf, 0xff1ec6cf
-            },
-            {
-            0xff713317, 0xff1ec6cf, 0xff1ec6cf, 0xff1ec6cf, 0xff1ec6cf, 
-            0xff1ec6cf, 0xff1ec6cf, 0xff1ec6cf, 0xff1ec6cf, 0xff1ec6cf, 
-            0xff1ec6cf, 0xff1ec6cf, 0xff1ec6cf, 0xff1ec6cf, 0xff1ec6cf, 
-            0xff1ec6cf, 0xff1ec6cf, 0xff1ec6cf, 0xff1ec6cf, 0xff1ec6cf, 
-            0xff1ec6cf, 0xff1ec6cf, 0xff1ec6cf, 0xff1ec6cf, 0xff1ec6cf
-            },
-            {
-            0xff1ec6cf, 0xff1ec6cf, 0xff1ec6cf, 0xff1ec6cf, 0xff1ec6cf, 
-            0xff1ec6cf, 0xff1ec6cf, 0xff1ec6cf, 0xff1ec6cf, 0xff1ec6cf, 
-            0xff1ec6cf, 0xff1ec6cf, 0xff1ec6cf, 0xff1ec6cf, 0xff1ec6cf, 
-            0xff1ec6cf, 0xff1ec6cf, 0xff1ec6cf, 0xff1ec6cf, 0xff1ec6cf, 
-            0xff1ec6cf, 0xff1ec6cf, 0xff1ec6cf, 0xff1ec6cf, 0xff1ec6cf
-            },
-            {
-            0xff1ec6cf, 0xff1ec6cf, 0xff1ec6cf, 0xff1ec6cf, 0xff713317, 
-            0xff1ec6cf, 0xff1ec6cf, 0xff1ec6cf, 0xff1ec6cf, 0xff1ec6cf, 
-            0xff1ec6cf, 0xff1ec6cf, 0xff1ec6cf, 0xff1ec6cf, 0xff1ec6cf, 
-            0xff1ec6cf, 0xff1ec6cf, 0xff1ec6cf, 0xff1ec6cf, 0xff1ec6cf, 
-            0xff1ec6cf, 0xff1ec6cf, 0xff1ec6cf, 0xff1ec6cf, 0xff1ec6cf
-            },
-            {
-            0xff1ec6cf, 0xff1ec6cf, 0xff1ec6cf, 0xff713317, 0xff713317, 
-            0xff1ec6cf, 0xff1ec6cf, 0xff1ec6cf, 0xff1ec6cf, 0xff713317, 
-            0xff1ec6cf, 0xff1ec6cf, 0xff1ec6cf, 0xff1ec6cf, 0xff1ec6cf, 
-            0xff1ec6cf, 0xff1ec6cf, 0xff1ec6cf, 0xff1ec6cf, 0xff1ec6cf, 
-            0xff1ec6cf, 0xff1ec6cf, 0xff1ec6cf, 0xff1ec6cf, 0xff1ec6cf
-            },
-            {
-            0xff1ec6cf, 0xff1ec6cf, 0xff713317, 0xff713317, 0xff713317, 
-            0xff1ec6cf, 0xff1ec6cf, 0xff1ec6cf, 0xff713317, 0xff713317, 
-            0xff1ec6cf, 0xff1ec6cf, 0xff1ec6cf, 0xff1ec6cf, 0xff713317, 
-            0xff1ec6cf, 0xff1ec6cf, 0xff1ec6cf, 0xff1ec6cf, 0xff1ec6cf, 
-            0xff1ec6cf, 0xff1ec6cf, 0xff1ec6cf, 0xff1ec6cf, 0xff1ec6cf
-            },
-            {
-            0xff1ec6cf, 0xff713317, 0xff713317, 0xff713317, 0xff713317, 
-            0xff1ec6cf, 0xff1ec6cf, 0xff713317, 0xff713317, 0xff713317, 
-            0xff1ec6cf, 0xff1ec6cf, 0xff1ec6cf, 0xff713317, 0xff713317, 
-            0xff1ec6cf, 0xff1ec6cf, 0xff1ec6cf, 0xff1ec6cf, 0xff713317, 
-            0xff1ec6cf, 0xff1ec6cf, 0xff1ec6cf, 0xff1ec6cf, 0xff1ec6cf
-            },
-            {
-            0xff713317, 0xff713317, 0xff713317, 0xff713317, 0xff713317, 
-            0xff1ec6cf, 0xff713317, 0xff713317, 0xff713317, 0xff713317, 
-            0xff1ec6cf, 0xff1ec6cf, 0xff713317, 0xff713317, 0xff713317, 
-            0xff1ec6cf, 0xff1ec6cf, 0xff1ec6cf, 0xff713317, 0xff713317, 
-            0xff1ec6cf, 0xff1ec6cf, 0xff1ec6cf, 0xff1ec6cf, 0xff713317
-            },
-            {
-            0xff713317, 0xff713317, 0xff713317, 0xff713317, 0xff713317, 
-            0xff713317, 0xff713317, 0xff713317, 0xff713317, 0xff713317, 
-            0xff1ec6cf, 0xff713317, 0xff713317, 0xff713317, 0xff713317, 
-            0xff1ec6cf, 0xff1ec6cf, 0xff713317, 0xff713317, 0xff713317, 
-            0xff1ec6cf, 0xff1ec6cf, 0xff1ec6cf, 0xff713317, 0xff713317
-            },
-            {
-            0xff713317, 0xff713317, 0xff713317, 0xff713317, 0xff713317, 
-            0xff713317, 0xff713317, 0xff713317, 0xff713317, 0xff713317, 
-            0xff713317, 0xff713317, 0xff713317, 0xff713317, 0xff713317, 
-            0xff1ec6cf, 0xff713317, 0xff713317, 0xff713317, 0xff713317, 
-            0xff1ec6cf, 0xff1ec6cf, 0xff713317, 0xff713317, 0xff713317
-            },
-            {
-            0xff713317, 0xff713317, 0xff713317, 0xff713317, 0xff713317, 
-            0xff713317, 0xff713317, 0xff713317, 0xff713317, 0xff713317, 
-            0xff713317, 0xff713317, 0xff713317, 0xff713317, 0xff713317, 
-            0xff713317, 0xff713317, 0xff713317, 0xff713317, 0xff713317, 
-            0xff1ec6cf, 0xff713317, 0xff713317, 0xff713317, 0xff713317
-            },
-            {
-            0xff713317, 0xff713317, 0xff713317, 0xff713317, 0xff713317, 
-            0xff713317, 0xff713317, 0xff713317, 0xff713317, 0xff713317, 
-            0xff713317, 0xff713317, 0xff713317, 0xff713317, 0xff713317, 
-            0xff713317, 0xff713317, 0xff713317, 0xff713317, 0xff713317, 
-            0xff713317, 0xff713317, 0xff713317, 0xff713317, 0xff713317
-            }
-        };
-    show_animation(anim3, 4, 200);
-}
-
-
 int main() {
     uint offset = pio_add_program(pio, &ws2812_program);
     ws2812_program_init(pio, sm, offset, WS2812_PIN, 800000, IS_RGBW);
@@ -336,7 +146,6 @@ int main() {
     gpio_set_irq_enabled_with_callback(JOY_BUTTON, GPIO_IRQ_EDGE_FALL, true, &button_callback);
     draw_menu();
     while (1) {
-        run_visual_mode();
         joy_navigation();
     }
     return 0;

@@ -1,7 +1,6 @@
 #include "buzzer.h"
 #include "init.h"
 
-
 // Notas musicais para a música tema de Star Wars
 const uint star_wars_notes[] = {
     330, 330, 330, 262, 392, 523, 330, 262,
