@@ -11,9 +11,11 @@
 #include "lib/buzzer.h"
 #include "lib/matriz_leds.h"
 
+int animacao_atual = 0;
+
 // Tempo de debouncing
 static volatile uint32_t last_joy_button_time = 0;
-#define DEBOUNCE_TIME 200000 // 200ms de debounce
+#define DEBOUNCE_TIME 100000 // 100ms de debounce
 
 int estado_atual_botao_a = 1;  // Estado inicial do botão A
 static volatile uint32_t last_time = 0; // Armazena o tempo do último evento (em microssegundos)
@@ -72,6 +74,7 @@ void draw_menu() {
     ssd1306_send_data(&oled);
 }
 
+void main_loop();
 // Função de callback unificada para o botão do joystick e o botão B
 void button_callback(uint gpio, uint32_t events) {
     static uint32_t last_button_time = 0;
@@ -131,24 +134,10 @@ void button_callback(uint gpio, uint32_t events) {
             }
             menu_option = 0;
             draw_menu();
-        }
-        // Verifica se o botão B foi pressionado para voltar ao menu principal
-        else if (gpio == BUTTON_B) {
-            printf("Voltando ao menu principal...\n");
-
-            current_menu = &main_menu;
-            menu_option = 0;  
-            draw_menu();  
-
-            gpio_put(LED_R_PIN, false);
-            gpio_put(LED_G_PIN, false);
-            gpio_put(LED_B_PIN, false);
-
-            apagar_matriz_leds();  
-
-            desligar_buzzer(); 
-
-            sleep_ms(100); // Pequeno atraso de 100ms
+        } else if (gpio == BUTTON_A) {
+            // Incrementa o número da animação e faz o loop
+            animacao_atual = (animacao_atual + 1) % 5;                
+            printf("Mudando para animação %d\n", animacao_atual);
         }
     }
 }
@@ -179,10 +168,16 @@ void joy_navigation() {
 // Função principal do loop, onde as ações são chamadas de forma não bloqueante
 void main_loop() {
     if (visual_mode_active) {
-        for (int a=0; a < 4; a++){
-        run_visual_mode(); // Chama o modo visual
+        // Executa a animação correspondente
+        switch (animacao_atual) {
+            case 0: run_visual_mode0(); break;
+            case 1: run_visual_mode1(); break;
+            case 2: run_visual_mode2(); break;
+            case 3: run_visual_mode3(); break;
+            case 4: run_visual_mode4(); break;
+        }
+        visual_mode_active = false;
     }
-    visual_mode_active = false;
     if (sound_mode_active) {
         play_star_wars(BUZZER_PIN); // Chama o modo sonoro
         sound_mode_active = false; // Reset flag
@@ -190,19 +185,19 @@ void main_loop() {
 
     joy_navigation(); // Atualiza a navegação no joystick
 }
-}
+
 int main() {
     setup_pio();
     setup();
     pwm_init_buzzer(BUZZER_PIN);
 
     // Configura a interrupção para o botão B e o botão do joystick na mesma função de callback
+    gpio_set_irq_enabled_with_callback(BUTTON_A, GPIO_IRQ_EDGE_FALL, true, &button_callback);
     gpio_set_irq_enabled_with_callback(BUTTON_B, GPIO_IRQ_EDGE_FALL, true, &button_callback);
     gpio_set_irq_enabled_with_callback(JOY_BUTTON, GPIO_IRQ_EDGE_FALL, true, &button_callback);
 
     draw_menu();
 
-    
     while (1) {
         joy_navigation();
         main_loop(); // Chama o loop principal

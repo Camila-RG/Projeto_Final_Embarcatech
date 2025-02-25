@@ -25,4 +25,10 @@ void display_static_color(uint32_t color);
 void run_visual_mode();
 void setup_pio();
 
+void run_visual_mode0();
+void run_visual_mode1();
+void run_visual_mode2();
+void run_visual_mode3();
+void run_visual_mode4();
+
 #endif // MATRIZ_LEDS_H
