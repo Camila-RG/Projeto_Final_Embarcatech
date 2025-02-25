@@ -134,10 +134,12 @@ void button_callback(uint gpio, uint32_t events) {
             }
             menu_option = 0;
             draw_menu();
-        } else if (gpio == BUTTON_A) {
-            // Incrementa o número da animação e faz o loop
-            animacao_atual = (animacao_atual + 1) % 5;                
+        }  if (gpio == BUTTON_A) {
+            // Incrementa o número da animação
+            animacao_atual = (animacao_atual + 1) % 5;  // Muda a animação entre 0 e 4
             printf("Mudando para animação %d\n", animacao_atual);
+    
+            visual_mode_active = true; // Ativa o modo visual para exibir a animação
         }
     }
 }
