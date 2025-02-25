@@ -11,8 +11,8 @@
 #include "lib/buzzer.h"
 #include "lib/matriz_leds.h"
 
+int animacao_contador = 0; // Contador para as repetições das animações
 int animacao_atual = 0;
-
 // Tempo de debouncing
 static volatile uint32_t last_joy_button_time = 0;
 #define DEBOUNCE_TIME 100000 // 100ms de debounce
@@ -135,6 +135,7 @@ void button_callback(uint gpio, uint32_t events) {
             menu_option = 0;
             draw_menu();
         }  if (gpio == BUTTON_A) {
+            sleep_ms(600);
             // Incrementa o número da animação
             animacao_atual = (animacao_atual + 1) % 5;  // Muda a animação entre 0 e 4
             printf("Mudando para animação %d\n", animacao_atual);
@@ -168,18 +169,37 @@ void joy_navigation() {
 }
 
 // Função principal do loop, onde as ações são chamadas de forma não bloqueante
+
+#define MAX_REPETICOES 10     // Número máximo de repetições por animação
+
+bool animacao_em_execucao = false;
+
+// Função principal do loop, onde as animações são chamadas de forma não bloqueante
 void main_loop() {
     if (visual_mode_active) {
-        // Executa a animação correspondente
-        switch (animacao_atual) {
-            case 0: run_visual_mode0(); break;
-            case 1: run_visual_mode1(); break;
-            case 2: run_visual_mode2(); break;
-            case 3: run_visual_mode3(); break;
-            case 4: run_visual_mode4(); break;
+        // Repete a animação MAX_REPETICOES vezes
+        for (int i = 0; i < MAX_REPETICOES; i++) {
+            switch (animacao_atual) {
+                case 0: run_visual_mode0(); break;
+                case 1: run_visual_mode1(); break;
+                case 2: run_visual_mode2(); break;
+                case 3: run_visual_mode3(); break;
+                case 4: run_visual_mode4(); break;
+            }
+
+            // Aguarda um pouco para a animação ser visível antes de repetir
+            sleep_ms(500);  // Espera de 500ms entre cada repetição da animação
         }
-        visual_mode_active = false;
+
+        // Após repetir as animações, muda para a próxima animação
+        animacao_atual = (animacao_atual + 1) % 5;  // Muda a animação entre 0 e 4
+
+        visual_mode_active = false;  // Desativa o modo visual para evitar execução contínua
+
+        // Marca que a animação terminou e está pronta para a próxima
+        animacao_em_execucao = false;
     }
+
     if (sound_mode_active) {
         play_star_wars(BUZZER_PIN); // Chama o modo sonoro
         sound_mode_active = false; // Reset flag
@@ -187,7 +207,6 @@ void main_loop() {
 
     joy_navigation(); // Atualiza a navegação no joystick
 }
-
 int main() {
     setup_pio();
     setup();
