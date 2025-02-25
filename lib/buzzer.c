@@ -1,73 +1,68 @@
 #include "buzzer.h"
-#include "init.h"
+#include "pico/stdlib.h"
+#include "hardware/pwm.h"
 
-// Notas musicais para a música tema de Star Wars
-const uint star_wars_notes[] = {
-    330, 330, 330, 262, 392, 523, 330, 262,
-    392, 523, 330, 659, 659, 659, 698, 523,
-    415, 349, 330, 262, 392, 523, 330, 262,
-    392, 523, 330, 659, 659, 659, 698, 523,
-    415, 349, 330, 523, 494, 440, 392, 330,
-    659, 784, 659, 523, 494, 440, 392, 330,
-    659, 659, 330, 784, 880, 698, 784, 659,
-    523, 494, 440, 392, 659, 784, 659, 523,
-    494, 440, 392, 330, 659, 523, 659, 262,
-    330, 294, 247, 262, 220, 262, 330, 262,
-    330, 294, 247, 262, 330, 392, 523, 440,
-    349, 330, 659, 784, 659, 523, 494, 440,
-    392, 659, 784, 659, 523, 494, 440, 392
-};
+#define BUZZER_PIN 21  // Pino onde o buzzer está conectado
 
-// Duração das notas em milissegundos
-const uint note_duration[] = {
-    500, 500, 500, 350, 150, 300, 500, 350,
-    150, 300, 500, 500, 500, 500, 350, 150,
-    300, 500, 500, 350, 150, 300, 500, 350,
-    150, 300, 650, 500, 150, 300, 500, 350,
-    150, 300, 500, 150, 300, 500, 350, 150,
-    300, 650, 500, 350, 150, 300, 500, 350,
-    150, 300, 500, 500, 500, 500, 350, 150,
-    300, 500, 500, 350, 150, 300, 500, 350,
-    150, 300, 500, 350, 150, 300, 500, 500,
-    350, 150, 300, 500, 500, 350, 150, 300,
-};
-
-// Inicializa o PWM no pino do buzzer
-void pwm_init_buzzer(uint pin) {
-    gpio_set_function(pin, GPIO_FUNC_PWM);
-    uint slice_num = pwm_gpio_to_slice_num(pin);
-    pwm_config config = pwm_get_default_config();
-    pwm_config_set_clkdiv(&config, 4.0f); // Ajusta divisor de clock
-    pwm_init(slice_num, &config, true);
-    pwm_set_gpio_level(pin, 0); // Desliga o PWM inicialmente
+// Função para inicializar o PWM para o buzzer
+void init_buzzer() {
+    // Configura o pino como saída de PWM
+    gpio_set_function(BUZZER_PIN, GPIO_FUNC_PWM);
+    
+    // Obtém o número do slice para o pino do buzzer
+    uint slice_num = pwm_gpio_to_slice_num(BUZZER_PIN);
+    
+    // Configura a frequência do PWM para o valor base (1 Hz ou o valor inicial desejado)
+    pwm_set_clkdiv(slice_num, 125.f);  // Ajuste o divisor conforme necessário
+    
+    // Define o valor de wrap (o número de ciclos do PWM)
+    pwm_set_wrap(slice_num, 1000);  // Ajuste o wrap para a frequência desejada
+    
+    // Define o ciclo de trabalho inicial (duty cycle)
+    pwm_set_chan_level(slice_num, PWM_CHAN_A, 500);  // 50% duty cycle
+    
+    // Ativa o PWM
+    pwm_set_enabled(slice_num, true);
 }
 
-// Toca uma nota com a frequência e duração especificadas
-void play_tone(uint pin, uint frequency, uint duration_ms) {
-    uint slice_num = pwm_gpio_to_slice_num(pin);
-    uint32_t clock_freq = clock_get_hz(clk_sys);
-    uint32_t top = clock_freq / frequency - 1;
 
-    pwm_set_wrap(slice_num, top);
-    pwm_set_gpio_level(pin, top / 2); // 50% de duty cycle
-
-    sleep_ms(duration_ms);
-
-    pwm_set_gpio_level(pin, 0); // Desliga o som após a duração
-    sleep_ms(50); // Pausa entre notas
+// Função para tocar uma nota no buzzer
+void play_note(uint32_t note, uint32_t duration) {
+    // Configura o pino para PWM
+    gpio_set_function(BUZZER_PIN, GPIO_FUNC_PWM);
+    
+    // Obtenha o número do canal PWM
+    uint slice_num = pwm_gpio_to_slice_num(BUZZER_PIN);
+    
+    // Configura a frequência da nota (em Hz)
+    pwm_set_clkdiv(slice_num, 125.f);  // Divisor de clock para controlar a frequência
+    
+    // Configura o ciclo de trabalho (duty cycle)
+    pwm_set_wrap(slice_num, 1000);  // Define o valor de wrap, que vai afetar a frequência
+    pwm_set_chan_level(slice_num, PWM_CHAN_A, 500);  // 50% duty cycle
+    
+    // Define a frequência da nota
+    pwm_set_clkdiv_int_frac(slice_num, 125000000 / note, 0);
+    
+    // Inicia o PWM
+    pwm_set_enabled(slice_num, true);
+    
+    // Espera o tempo da duração da nota
+    sleep_ms(duration);
+    
+    // Desliga o PWM
+    pwm_set_enabled(slice_num, false);
 }
 
-// Função principal para tocar a música
-void play_star_wars(uint pin) {
-    for (int i = 0; i < sizeof(star_wars_notes) / sizeof(star_wars_notes[0]); i++) {
-        if (star_wars_notes[i] == 0) {
-            sleep_ms(note_duration[i]);
-        } else {
-            play_tone(pin, star_wars_notes[i], note_duration[i]);
-        }
-    }
-}
-
-void desligar_buzzer() {
-    gpio_put(BUZZER_PIN, false); // Desliga o buzzer
+// Função para tocar uma música calma
+void play_calming_music() {
+    // Exemplo de notas com suas frequências (Hz) e duração (ms)
+    play_note(262, 400); // Dó (C4)
+    play_note(294, 400); // Ré (D4)
+    play_note(330, 400); // Mi (E4)
+    play_note(349, 400); // Fá (F4)
+    play_note(392, 400); // Sol (G4)
+    play_note(440, 400); // Lá (A4)
+    play_note(494, 400); // Si (B4)
+    play_note(523, 400); // Dó (C5)
 }

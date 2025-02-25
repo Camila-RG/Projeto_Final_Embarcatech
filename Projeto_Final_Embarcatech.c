@@ -42,14 +42,14 @@ int menu_option = 0;
 
 // Função de leitura do eixo Y do joystick (ajustada para corrigir o eixo)
 int read_joy_y() {
-    adc_select_input(1); // Altere para o canal correto para o eixo Y
+    adc_select_input(0); // Altere para o canal correto para o eixo Y
     uint16_t y_value = adc_read();
     return y_value;
 }
 
 // Função de leitura do eixo X do joystick (caso precise também)
 int read_joy_x() {
-    adc_select_input(0); // Altere para o canal correto para o eixo X
+    adc_select_input(1); // Altere para o canal correto para o eixo X
     uint16_t x_value = adc_read();
     return x_value;
 }
@@ -170,13 +170,14 @@ void joy_navigation() {
 
 // Função principal do loop, onde as ações são chamadas de forma não bloqueante
 
-#define MAX_REPETICOES 10     // Número máximo de repetições por animação
+#define MAX_REPETICOES 5     // Número máximo de repetições por animação
 
 bool animacao_em_execucao = false;
 
 // Função principal do loop, onde as animações são chamadas de forma não bloqueante
 void main_loop() {
-    if (visual_mode_active) {
+    if (visual_mode_active && !animacao_em_execucao) {  // Verifica se a animação já está em execução
+        animacao_em_execucao = true;  // Marca que a animação começou
         // Repete a animação MAX_REPETICOES vezes
         for (int i = 0; i < MAX_REPETICOES; i++) {
             switch (animacao_atual) {
@@ -195,22 +196,22 @@ void main_loop() {
         animacao_atual = (animacao_atual + 1) % 5;  // Muda a animação entre 0 e 4
 
         visual_mode_active = false;  // Desativa o modo visual para evitar execução contínua
-
-        // Marca que a animação terminou e está pronta para a próxima
-        animacao_em_execucao = false;
+        animacao_em_execucao = false; // Marca que a animação terminou
     }
 
     if (sound_mode_active) {
-        play_star_wars(BUZZER_PIN); // Chama o modo sonoro
+        // Chama o modo sonoro
+        play_calming_music(BUZZER_PIN);
         sound_mode_active = false; // Reset flag
     }
 
     joy_navigation(); // Atualiza a navegação no joystick
 }
+
 int main() {
     setup_pio();
+    init_buzzer(); 
     setup();
-    pwm_init_buzzer(BUZZER_PIN);
 
     // Configura a interrupção para o botão B e o botão do joystick na mesma função de callback
     gpio_set_irq_enabled_with_callback(BUTTON_A, GPIO_IRQ_EDGE_FALL, true, &button_callback);

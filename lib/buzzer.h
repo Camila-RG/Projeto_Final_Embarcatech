@@ -5,9 +5,8 @@
 #include "hardware/pwm.h"
 #include "hardware/clocks.h"
 
-void pwm_init_buzzer(uint pin);
-void play_tone(uint pin, uint frequency, uint duration_ms);
-void play_star_wars(uint pin);
-void desligar_buzzer();
+void init_buzzer();
+void play_note(uint32_t note, uint32_t duration);
+void play_calming_music();
 
 #endif // BUZZER_H
