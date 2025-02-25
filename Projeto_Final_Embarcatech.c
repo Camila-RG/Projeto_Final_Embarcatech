@@ -153,7 +153,7 @@ void button_callback(uint gpio, uint32_t events) {
     }
 }
 
-#define DEADZONE 500       // Zona morta para evitar leituras imprecisas
+#define DEADZONE 500   // Zona morta para evitar leituras imprecisas
 #define NAV_DELAY 200
 
 void joy_navigation() {
@@ -179,10 +179,10 @@ void joy_navigation() {
 // Função principal do loop, onde as ações são chamadas de forma não bloqueante
 void main_loop() {
     if (visual_mode_active) {
+        for (int a=0; a < 4; a++){
         run_visual_mode(); // Chama o modo visual
-        visual_mode_active = false; // Reset flag
     }
-
+    visual_mode_active = false;
     if (sound_mode_active) {
         play_star_wars(BUZZER_PIN); // Chama o modo sonoro
         sound_mode_active = false; // Reset flag
@@ -190,7 +190,7 @@ void main_loop() {
 
     joy_navigation(); // Atualiza a navegação no joystick
 }
-
+}
 int main() {
     setup_pio();
     setup();
@@ -202,7 +202,9 @@ int main() {
 
     draw_menu();
 
+    
     while (1) {
+        joy_navigation();
         main_loop(); // Chama o loop principal
     }
 
