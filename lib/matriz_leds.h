@@ -17,6 +17,7 @@ extern uint led_r;
 extern uint led_g;
 extern uint led_b;
 
+void apagar_matriz_leds();
 void set_pixel_color(uint32_t *pixels, int index, uint32_t color);
 void show_frame(const uint32_t frame[25]);
 void show_animation(const uint32_t animation[][25], int frame_count, int delay_ms);

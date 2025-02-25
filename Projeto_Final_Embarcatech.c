@@ -19,6 +19,10 @@ int estado_atual_botao_a = 1;  // Estado inicial do botão A
 static volatile uint32_t last_time = 0; // Armazena o tempo do último evento (em microssegundos)
 ssd1306_t oled;
 
+// Flags para controlar o estado das ações
+bool visual_mode_active = false;
+bool sound_mode_active = false;
+
 // Estrutura para os menus
 typedef struct {
     const char *title;
@@ -27,18 +31,25 @@ typedef struct {
 
 // Menus e submenus
 Menu main_menu = {"MENU", {"1Sensivel", "2Estimulo", "3Modo Alerta"}};
-Menu submenu1 = {"Sensivel", {"Modo tranquilizante", "Monitoramento ruidos", "Voltar"}};
+Menu submenu1 = {"Sensivel", {"Modo Calmo", "Detector ruido", "Voltar"}};
 Menu submenu2 = {"Estimulo", {"Visuais", "Sonoros", "Voltar"}};
 Menu submenu3 = {"Falante", {"Sentimentos", "Acoes", "Voltar"}};
 
 Menu *current_menu = &main_menu;
 int menu_option = 0;
 
-// Função de leitura do eixo Y do joystick
+// Função de leitura do eixo Y do joystick (ajustada para corrigir o eixo)
 int read_joy_y() {
-    adc_select_input(1);
+    adc_select_input(1); // Altere para o canal correto para o eixo Y
     uint16_t y_value = adc_read();
     return y_value;
+}
+
+// Função de leitura do eixo X do joystick (caso precise também)
+int read_joy_x() {
+    adc_select_input(0); // Altere para o canal correto para o eixo X
+    uint16_t x_value = adc_read();
+    return x_value;
 }
 
 // Função para desenhar o menu
@@ -61,15 +72,17 @@ void draw_menu() {
     ssd1306_send_data(&oled);
 }
 
-// Callback da interrupção do botão do joystick com debounce
+// Função de callback unificada para o botão do joystick e o botão B
 void button_callback(uint gpio, uint32_t events) {
+    static uint32_t last_button_time = 0;
     uint32_t current_time = to_us_since_boot(get_absolute_time());
 
-    // Verifica se passou tempo suficiente para evitar bouncing (200ms)
-    if (current_time - last_joy_button_time > DEBOUNCE_TIME) {
-        last_joy_button_time = current_time;  // Atualiza o tempo do último evento
+    // Debouncing para garantir que a função não seja chamada múltiplas vezes rapidamente
+    if (current_time - last_button_time > DEBOUNCE_TIME) {
+        last_button_time = current_time;
 
         if (gpio == JOY_BUTTON) {
+            // Lógica para o botão do joystick
             if (current_menu == &main_menu) {
                 switch (menu_option) {
                     case 0: current_menu = &submenu1; break;
@@ -78,75 +91,120 @@ void button_callback(uint gpio, uint32_t events) {
                 }
             } else if (current_menu == &submenu1) {
                 switch (menu_option) {
-                    case 0: // Ação para "Modo tranquilizante"
-                        gpio_put(LED_G_PIN, true);  // Acende o LED verde para demonstrar a ação
-                        gpio_put(LED_R_PIN, false); // Desliga o LED vermelho (opcional)
-                        gpio_put(LED_B_PIN, false); // Desliga o LED azul (opcional)
-                        draw_menu();  // Atualiza o display
+                    case 0:
+                        gpio_put(LED_G_PIN, true);
+                        gpio_put(LED_R_PIN, true);
+                        gpio_put(LED_B_PIN, true);
                         break;
-                    case 1: // Ação para "Monitoramento de ruidos"
-                        // Outra ação pode ser realizada, como emitir um som
+                    case 1:
                         printf("Monitoramento de ruídos ativado!\n");
-                        draw_menu();
                         break;
-                    case 2: current_menu = &main_menu; break; // Volta ao menu principal
+                    case 2:
+                        current_menu = &main_menu;
+                        break;
                 }
             } else if (current_menu == &submenu2) {
                 switch (menu_option) {
-                    case 0: // Ação para "Visuais"
+                    case 0:
                         printf("Modo visual ativado!\n");
-                        draw_menu();
+                        visual_mode_active = true; // Definir flag para visual mode
                         break;
-                    case 1: // Ação para "Sonoros"
-                        printf("Modo sonoro ativado!\n");
-                        draw_menu();
+                    case 1:
+                        sound_mode_active = true; // Definir flag para som
                         break;
-                    case 2: current_menu = &main_menu; break; // Volta ao menu principal
+                    case 2:
+                        current_menu = &main_menu;
+                        break;
                 }
             } else if (current_menu == &submenu3) {
                 switch (menu_option) {
-                    case 0: // Ação para "Sentimentos"
+                    case 0:
                         printf("Sentimentos ativados!\n");
-                        draw_menu();
                         break;
-                    case 1: // Ação para "Ações"
+                    case 1:
                         printf("Ações ativadas!\n");
-                        draw_menu();
                         break;
-                    case 2: current_menu = &main_menu; break; // Volta ao menu principal
+                    case 2:
+                        current_menu = &main_menu;
+                        break;
                 }
             }
-            menu_option = 0; // Reseta a opção do menu
-            draw_menu(); // Desenha o menu após a ação
+            menu_option = 0;
+            draw_menu();
+        }
+        // Verifica se o botão B foi pressionado para voltar ao menu principal
+        else if (gpio == BUTTON_B) {
+            printf("Voltando ao menu principal...\n");
+
+            current_menu = &main_menu;
+            menu_option = 0;  
+            draw_menu();  
+
+            gpio_put(LED_R_PIN, false);
+            gpio_put(LED_G_PIN, false);
+            gpio_put(LED_B_PIN, false);
+
+            apagar_matriz_leds();  
+
+            desligar_buzzer(); 
+
+            sleep_ms(100); // Pequeno atraso de 100ms
         }
     }
 }
 
-// Navegação joystick
+#define DEADZONE 500       // Zona morta para evitar leituras imprecisas
+#define NAV_DELAY 200
+
 void joy_navigation() {
+    static uint32_t last_move_time = 0;
+    uint32_t current_time = to_ms_since_boot(get_absolute_time());
+
     int y_value = read_joy_y();
 
-    if (y_value < 1000) {
-        menu_option = (menu_option + 1) % 3;
-        draw_menu();
-        sleep_ms(200);
-    } else if (y_value > 3000) {
-        menu_option = (menu_option - 1 + 3) % 3;
-        draw_menu();
-        sleep_ms(200);
+    if (current_time - last_move_time > NAV_DELAY) {
+        if (y_value < 1000 - DEADZONE) {  // Movimento para cima (corrigido)
+            menu_option = (menu_option - 1 + 3) % 3;
+            last_move_time = current_time;
+            draw_menu();
+        } 
+        else if (y_value > 3000 + DEADZONE) {  // Movimento para baixo (corrigido)
+            menu_option = (menu_option + 1) % 3;
+            last_move_time = current_time;
+            draw_menu();
+        }
     }
+}
+
+// Função principal do loop, onde as ações são chamadas de forma não bloqueante
+void main_loop() {
+    if (visual_mode_active) {
+        run_visual_mode(); // Chama o modo visual
+        visual_mode_active = false; // Reset flag
+    }
+
+    if (sound_mode_active) {
+        play_star_wars(BUZZER_PIN); // Chama o modo sonoro
+        sound_mode_active = false; // Reset flag
+    }
+
+    joy_navigation(); // Atualiza a navegação no joystick
 }
 
 int main() {
     setup_pio();
     setup();
     pwm_init_buzzer(BUZZER_PIN);
-    // Configuração da interrupção para o botão do joystick com debounce
+
+    // Configura a interrupção para o botão B e o botão do joystick na mesma função de callback
+    gpio_set_irq_enabled_with_callback(BUTTON_B, GPIO_IRQ_EDGE_FALL, true, &button_callback);
     gpio_set_irq_enabled_with_callback(JOY_BUTTON, GPIO_IRQ_EDGE_FALL, true, &button_callback);
+
     draw_menu();
+
     while (1) {
-        joy_navigation();
-        run_visual_mode();
+        main_loop(); // Chama o loop principal
     }
+
     return 0;
 }

@@ -14,6 +14,7 @@
 #define JOY_Y 27
 #define JOY_BUTTON 22
 #define BUTTON_A 5 
+#define BUTTON_B 6
 #define LED_G_PIN 11
 #define LED_B_PIN 12
 #define LED_R_PIN 13 

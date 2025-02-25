@@ -67,3 +67,7 @@ void play_star_wars(uint pin) {
         }
     }
 }
+
+void desligar_buzzer() {
+    gpio_put(BUZZER_PIN, false); // Desliga o buzzer
+}
