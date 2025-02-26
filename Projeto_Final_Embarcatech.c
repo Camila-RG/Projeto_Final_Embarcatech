@@ -107,6 +107,8 @@ void joy_navigation() {
 
 bool animacao_em_execucao = false;
 
+void monitoramento_mic();
+
 void button_callback(uint gpio, uint32_t events) {
     static uint32_t last_button_time = 0;
     uint32_t current_time = to_us_since_boot(get_absolute_time());
@@ -118,7 +120,10 @@ void button_callback(uint gpio, uint32_t events) {
             // Lógica de navegação nos menus
             if (current_menu == &main_menu) {
                 switch (menu_option) {
-                    case 0: current_menu = &submenu1; break;
+                    case 0: current_menu = &submenu1;
+                        printf("Monitoramento ligado!");
+                        monitoramento_mic();
+                        break;
                     case 1: current_menu = &submenu2; break;
                     case 2: current_menu = &submenu3; break;
                 }
@@ -173,27 +178,29 @@ void main_loop() {
     joy_navigation();
 }
 
-const uint limiar_1 = 3080;     // Limiar para monitoramento
-const uint limiar_2 = 4000;    // Limiar para alerta
+const uint limiar_1 = 700;     // Limiar para monitoramento
+const uint limiar_2 = 3000;    // Limiar para alerta
 
-// Define o intervalo entre amostras (em microsegundos)
+// Define o intervalo entre amostras
+#define INTERVALO_US 100000
 
-uint64_t intervalo_us = 1000000; // amostras_por_segundo
 void monitoramento_mic() {
-    uint16_t mic_value = adc_read(); // Lê o ADC
-    ssd1306_fill(&oled, 0); // Limpa a tela antes de desenhar
+    adc_select_input(2);  // Certifica que está lendo o canal correto
+    uint16_t mic_value = adc_read(); 
 
     if (mic_value > limiar_1 && mic_value < limiar_2) {
-        ssd1306_draw_string(&oled, "Ruídos suportáveis", 10, 20);
+        ssd1306_draw_string(&oled, "Ruidos suportaveis", 10, 20);
     } else if (mic_value > limiar_2) {
-        ssd1306_draw_string(&oled, "Ruídos excessivos!", 10, 20);
+        ssd1306_draw_string(&oled, "Ruidos excessivos", 10, 20);
         ssd1306_draw_string(&oled, "Modo Calmo recomendado", 10, 35);
+        gpio_put(LED_R_PIN, 1);
+        gpio_put(LED_B_PIN, 0);
+        gpio_put(LED_G_PIN, 0);
     }
 
-    ssd1306_send_data(&oled); // Atualiza o display
-    sleep_us(intervalo_us);  // Delay para taxa de amostragem correta
+    ssd1306_send_data(&oled);  // Atualiza o display
+    sleep_us(INTERVALO_US);    // Delay para taxa de amostragem correta
 }
-
 
 int main() {
     setup_pio();
@@ -206,14 +213,10 @@ int main() {
     gpio_set_irq_enabled_with_callback(BUTTON_B, GPIO_IRQ_EDGE_FALL, true, &button_callback);
     gpio_set_irq_enabled_with_callback(JOY_BUTTON, GPIO_IRQ_EDGE_FALL, true, &button_callback);
 
-    adc_gpio_init(microfone);
-    adc_select_input(2);
-
     draw_menu();
 
     
     while (1) {
-        monitoramento_mic();
         joy_navigation();
         main_loop(); // Chama o loop principal
     }
