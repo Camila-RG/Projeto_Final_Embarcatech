@@ -106,8 +106,9 @@ void joy_navigation() {
 #define MAX_REPETICOES 5     // Número máximo de repetições por animação
 
 bool animacao_em_execucao = false;
-
+bool monitor_ative = false;
 void monitoramento_mic();
+
 
 void button_callback(uint gpio, uint32_t events) {
     static uint32_t last_button_time = 0;
@@ -117,39 +118,53 @@ void button_callback(uint gpio, uint32_t events) {
         last_button_time = current_time;
 
         if (gpio == JOY_BUTTON) {
-            // Lógica de navegação nos menus
+            // Lógica de navegação no menu
             if (current_menu == &main_menu) {
                 switch (menu_option) {
-                    case 0: current_menu = &submenu1;
-                        printf("Monitoramento ligado!");
-                        monitoramento_mic();
-                        break;
+                    case 0: current_menu = &submenu1; break;
                     case 1: current_menu = &submenu2; break;
                     case 2: current_menu = &submenu3; break;
                 }
-            } else if (current_menu == &submenu2) {
+            } else if (current_menu == &submenu1) {
                 switch (menu_option) {
                     case 0:
-                        printf("Modo visual ativado!\n");
-                        visual_mode_active = true;
+                        printf("Modo Calmo ativado!\n");
                         break;
                     case 1:
-                        printf("Modo sonoro ativado!\n");
-                        sound_mode_active = true;
+                        printf("Monitoramento de ruído ativado!\n");
+                        monitor_ative = true; // Ativar corretamente
                         break;
                     case 2:
                         current_menu = &main_menu;
                         break;
                 }
+            } else if (current_menu == &submenu2) {
+                switch (menu_option) {
+                    case 0: visual_mode_active = true; break;
+                    case 1: sound_mode_active = true; break;
+                    case 2: current_menu = &main_menu; break;
+                }
+            } else if (current_menu == &submenu3) {
+                if (menu_option == 2) {
+                    current_menu = &main_menu;
+                }
             }
             menu_option = 0;
             draw_menu();
+        }
+
+        if (gpio_get(BUTTON_A) == 0) {
+            printf("Monitoramento encerrado!\n");
+            monitor_ative = false;
+            current_menu = &main_menu;  
+            menu_option = 0;
         }
     }
 }
 
 void main_loop() {
-    // Executa animações no modo visual
+    joy_navigation();
+
     if (visual_mode_active && !animacao_em_execucao) {
         animacao_em_execucao = true;
         for (int i = 0; i < MAX_REPETICOES; i++) {
@@ -167,40 +182,71 @@ void main_loop() {
         animacao_em_execucao = false;
     }
 
-    // Executa o som no modo sonoro
     if (sound_mode_active) {
-        void play_song();
-        printf("Tocando som de 'Clair de Lune'!\n");
-          // Toca o som
-        sound_mode_active = false;  // Reseta o estado do modo sonoro
+        printf("Tocando 'Clair de Lune'!\n");
+        play_song();
+        sound_mode_active = false;  
     }
 
-    joy_navigation();
+    if (monitor_ative) {  // Somente chama a função se estiver ativado
+        monitoramento_mic();
+    }
 }
 
+
 const uint limiar_1 = 700;     // Limiar para monitoramento
-const uint limiar_2 = 3000;    // Limiar para alerta
+const uint limiar_2 = 2800;    // Limiar para alerta
 
 // Define o intervalo entre amostras
 #define INTERVALO_US 100000
-
 void monitoramento_mic() {
-    adc_select_input(2);  // Certifica que está lendo o canal correto
-    uint16_t mic_value = adc_read(); 
-
-    if (mic_value > limiar_1 && mic_value < limiar_2) {
-        ssd1306_draw_string(&oled, "Ruidos suportaveis", 10, 20);
-    } else if (mic_value > limiar_2) {
-        ssd1306_draw_string(&oled, "Ruidos excessivos", 10, 20);
-        ssd1306_draw_string(&oled, "Modo Calmo recomendado", 10, 35);
-        gpio_put(LED_R_PIN, 1);
-        gpio_put(LED_B_PIN, 0);
-        gpio_put(LED_G_PIN, 0);
+    if (!monitor_ative) {
+        return;
     }
 
-    ssd1306_send_data(&oled);  // Atualiza o display
-    sleep_us(INTERVALO_US);    // Delay para taxa de amostragem correta
+    static uint32_t last_sample_time = 0;
+    uint32_t current_time = to_ms_since_boot(get_absolute_time());
+
+    while (monitor_ative) {
+        if (current_time - last_sample_time >= 100) {
+            last_sample_time = current_time;
+            adc_select_input(2);  
+            uint16_t mic_value = adc_read();
+            ssd1306_fill(&oled, 0);
+
+            if (mic_value > limiar_1 && mic_value < limiar_2) {
+                ssd1306_draw_string(&oled, "Ruídos suportáveis", 10, 20);
+            } else if (mic_value > limiar_2) {
+                ssd1306_draw_string(&oled, "Ruído excessivo!", 10, 20);
+                ssd1306_draw_string(&oled, "Modo Calmo recomendado", 10, 35);
+                gpio_put(LED_R_PIN, 1);
+                gpio_put(LED_B_PIN, 0);
+                gpio_put(LED_G_PIN, 0);
+            } else {
+                gpio_put(LED_R_PIN, 0);
+                gpio_put(LED_B_PIN, 0);
+                gpio_put(LED_G_PIN, 0);
+            }
+
+            ssd1306_send_data(&oled);
+        }
+
+        // Se o botão A for pressionado, sai do monitoramento
+        if (gpio_get(BUTTON_A) == 0) {
+            printf("Monitoramento encerrado!\n");
+            monitor_ative = false;
+            current_menu = &main_menu;  
+            menu_option = 0;
+        }
+
+        sleep_ms(100);
+    }
+
+    // Agora o menu será desenhado após a execução
+    draw_menu();
 }
+
+
 
 int main() {
     setup_pio();
@@ -210,7 +256,6 @@ int main() {
        
     // Configura a interrupção para o botão B e o botão do joystick na mesma função de callback
     gpio_set_irq_enabled_with_callback(BUTTON_A, GPIO_IRQ_EDGE_FALL, true, &button_callback);
-    gpio_set_irq_enabled_with_callback(BUTTON_B, GPIO_IRQ_EDGE_FALL, true, &button_callback);
     gpio_set_irq_enabled_with_callback(JOY_BUTTON, GPIO_IRQ_EDGE_FALL, true, &button_callback);
 
     draw_menu();

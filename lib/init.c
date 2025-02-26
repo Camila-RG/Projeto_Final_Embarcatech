@@ -36,7 +36,4 @@ void setup() {
     gpio_init(JOY_BUTTON);
     gpio_set_dir(JOY_BUTTON, GPIO_IN);
     gpio_pull_up(JOY_BUTTON);
-
-    gpio_init(BUZZER_PIN);
-    gpio_set_dir(BUZZER_PIN, GPIO_OUT);
 }

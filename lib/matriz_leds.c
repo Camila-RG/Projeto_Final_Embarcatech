@@ -2,9 +2,9 @@
 
 PIO pio = pio0;
 uint sm = 0;
-uint led_r = 1*0.5;
-uint led_g = 1*0.5;
-uint led_b = 1*0.5;
+uint led_r = 1*0.25;
+uint led_g = 1*0.25;
+uint led_b = 1*0.25;
 
 // Função para definir a cor de um pixel específico
 void set_pixel_color(uint32_t *pixels, int index, uint32_t color) {
@@ -24,7 +24,7 @@ void show_frame(const uint32_t frame[25]) {
             uint8_t r = (color >> 16) & 0xFF;
             uint8_t g = (color >> 8) & 0xFF;
             uint8_t b = color & 0xFF;
-            uint32_t corrected_color = (g << 24) | (r << 16) | (b);
+            uint32_t corrected_color = (g << 16) | (r << 8) | (b);
 
             pio_sm_put_blocking(pio, sm, corrected_color);
         }
