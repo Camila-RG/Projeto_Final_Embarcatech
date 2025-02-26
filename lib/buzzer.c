@@ -1,45 +1,49 @@
-#include <stdio.h>
 #include "pico/stdlib.h"
 #include "hardware/pwm.h"
 #include "hardware/clocks.h"
- 
- // Configuração do pino do buzzer
- #define BUZZER 21
- // configura os pinos dos buzzers para PWM
+#include "buzzer.h"
 
- const uint16_t WRAP_PERIOD = 4000; //valor máximo do contador - WRAP
- const float PWM_DIVISER = 4.0; //divisor do clock para o PWM
- const uint16_t LED_STEP = 200; //passo de incremento/decremento para o duty cycle do LED
- uint16_t led_level = 200; //nível inicial do pwm (duty cycle)
- 
- //função para configurar o módulo PWM
- void pwm_setup()
- {
-     gpio_set_function(BUZZER, GPIO_FUNC_PWM); //habilitar o pino GPIO como PWM
- 
-     uint slice = pwm_gpio_to_slice_num(BUZZER); //obter o canal PWM da GPIO
- 
-     pwm_set_clkdiv(slice, PWM_DIVISER); //define o divisor de clock do PWM
- 
-     pwm_set_wrap(slice, WRAP_PERIOD); //definir o valor de wrap
- 
-     pwm_set_gpio_level(BUZZER, 100); //definir o cico de trabalho (duty cycle) do pwm
- 
-     pwm_set_enabled(slice, true); //habilita o pwm no slice correspondente
- }
- void beep(uint pin, uint duration_ms) {
-     // Obter o slice do PWM associado ao pino
-     uint slice_num = pwm_gpio_to_slice_num(pin);
- 
-     // Configurar o duty cycle para 50% (ativo)
-     pwm_set_gpio_level(pin, 2048);
- 
-     // Temporização
-     sleep_ms(duration_ms);
- 
-     // Desativar o sinal PWM (duty cycle 0)
-     pwm_set_gpio_level(pin, 0);
- 
-     // Pausa entre os beeps
-     sleep_ms(100); // Pausa de 100ms
- }
+
+
+// Definição das frequências das notas musicais (em Hz)
+const uint notes[] = {
+    262, 294, 330, 349, 392, 440, 494, 523  // C4, D4, E4, F4, G4, A4, B4, C5
+};
+
+// Definição das durações das notas (em milissegundos)
+const uint note_duration[] = {
+    500, 500, 500, 500, 500, 500, 500, 500  // Duração de cada nota
+};
+
+// Função para inicializar o PWM no pino do buzzer
+void pwm_init_buzzer(uint pin) {
+    gpio_set_function(pin, GPIO_FUNC_PWM);
+    uint slice_num = pwm_gpio_to_slice_num(pin);
+    pwm_config config = pwm_get_default_config();
+    pwm_config_set_clkdiv(&config, 2.0f);  // Divisão de clock ajustada
+    pwm_init(slice_num, &config, true);
+}
+
+// Função para tocar uma nota (frequência e duração)
+void play_tone(uint pin, uint frequency, uint duration_ms) {
+    uint slice_num = pwm_gpio_to_slice_num(pin);
+    uint32_t clock_freq = clock_get_hz(clk_sys);  // Obtendo a frequência do clock
+    uint32_t top = clock_freq / (frequency * 2) - 1;  // Cálculo da frequência de PWM
+
+    pwm_set_wrap(slice_num, top);
+    pwm_set_gpio_level(pin, top / 2);  // Ajuste do ciclo de trabalho para controlar a intensidade
+    pwm_set_enabled(slice_num, true);  // Ativa o PWM para produzir o som
+
+    sleep_ms(duration_ms);  // Duração da nota
+
+    pwm_set_gpio_level(pin, 0);  // Desativa o som
+    pwm_set_enabled(slice_num, false);  // Desativa o PWM
+}
+
+// Função para tocar a música (sequência de notas)
+void play_song() {
+    int num_notes = sizeof(notes) / sizeof(uint);  // Calcula o número de notas
+    for (int i = 0; i < num_notes; i++) {
+        play_tone(BUZZER_PIN, notes[i], note_duration[i]);
+    }
+}

@@ -164,6 +164,7 @@ void main_loop() {
 
     // Executa o som no modo sonoro
     if (sound_mode_active) {
+        void play_song();
         printf("Tocando som de 'Clair de Lune'!\n");
           // Toca o som
         sound_mode_active = false;  // Reseta o estado do modo sonoro
@@ -196,7 +197,7 @@ void monitoramento_mic() {
 
 int main() {
     setup_pio();
-    pwm_setup(BUZZER_PIN); 
+    pwm_init_buzzer(BUZZER_PIN); 
     
     setup();
        
@@ -212,7 +213,7 @@ int main() {
 
     
     while (1) {
-        void monitoramento_mic();
+        monitoramento_mic();
         joy_navigation();
         main_loop(); // Chama o loop principal
     }
