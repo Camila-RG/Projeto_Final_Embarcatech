@@ -1,6 +1,6 @@
 # Projeto Final Embarcatech: Sensin
 
-Bem-vindo ao Sensin, um projeto desenvolvido como projeto final do Embarcatech. Sensin é um programa regulador de estímulos para autistas. O nome Sensin é inspirado no latim "sentir" e se propõe a ajudar indivíduos com autismo a regular estímulos, sejam eles visuais ou sonoros. 
+Bem-vindo ao Sensin, um projeto desenvolvido como projeto final do Embarcatech. Sensin é um programa regulador de estímulos para autistas. O nome Sensin é inspirado no latim "sentir" e se propõe a ajudar autistas a regular estímulos, sejam eles visuais ou sonoros. 
 Autistas frequentemente sofrem com hiperestimulação ou hipoestimulação e precisam de ferramentas para ajudá-los a se regular.
 **Sensin** (do latim "sentir") é um programa desenvolvido para auxiliar autistas a regularem seus estímulos sensoriais. Este projeto utiliza a placa **BitDogLab** com o **RP2040**, além de periféricos como **buzzer, LEDs, microfone, WS2812** e **display OLED SSD1306** para criar essa ferramenta acessível e interativa.
 
@@ -50,7 +50,7 @@ O menu inicial apresenta três opções principais:
 | Joystick Eixo X | GP26 |
 
 ## Linguagem utilizada
--C
+- **C**
 
 ## Como Usar
 1. Clone o repositório:
