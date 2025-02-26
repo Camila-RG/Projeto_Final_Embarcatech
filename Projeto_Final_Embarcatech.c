@@ -14,6 +14,7 @@
 
 int animacao_contador = 0; // Contador para as repetições das animações
 int animacao_atual = 0;
+int emocao_atual = 0;
 
 #define microfone 28
 
@@ -27,6 +28,7 @@ ssd1306_t oled;
 
 // Flags para controlar o estado das ações
 bool visual_mode_active = false;
+bool visual_mode_active1 = false;
 bool sound_mode_active = false;
 
 // Estrutura para os menus
@@ -39,7 +41,7 @@ typedef struct {
 Menu main_menu = {"MENU", {"Sensivel", "Estimulo", "Modo Alerta"}};
 Menu submenu1 = {"Sensivel", {"Modo Calmo", "Detector ruido", "Voltar"}};
 Menu submenu2 = {"Estimulo", {"Visual", "Sonoro", "Voltar"}};
-Menu submenu3 = {"Falante", {"Sentimentos", "CRISE", "Voltar"}};
+Menu submenu3 = {"Falante", {"Emocoes", "AJUDA", "Voltar"}};
 
 Menu *current_menu = &main_menu;
 int menu_option = 0;
@@ -109,6 +111,8 @@ bool sound_mode_active1 = false;
 bool animacao_em_execucao = false;
 bool monitor_ative = false;
 bool modo_ajuda = false;
+bool emocao_em_execucao = false;
+bool modo_sentimentos_ativo = false;  // Flag para o modo Sentimentos
 
 void monitoramento_mic();
 
@@ -166,7 +170,7 @@ void button_callback(uint gpio, uint32_t events) {
             } else if (current_menu == &submenu3) {
                 switch (menu_option) {
                     case 0: 
-                        
+                        modo_sentimentos_ativo = true;
                         printf("Modo Visual ativo!\n");
                      break;
                     case 1: 
@@ -175,6 +179,11 @@ void button_callback(uint gpio, uint32_t events) {
                     break;
                     case 2: current_menu = &main_menu; break;
                 }
+                // Alterna a animação de emoção
+            if (modo_sentimentos_ativo) {
+                emocao_atual = (emocao_atual + 1) % 5;  // Alterna entre 0 a 4
+            }
+
             }
             menu_option = 0;
             draw_menu();
@@ -203,10 +212,31 @@ void main_loop() {
                 case 4: run_visual_mode4(); break;
             }
             sleep_ms(500);
+        }animacao_atual = (animacao_atual + 1) % 5;  // Alterna a animação
+        emocao_em_execucao = false;
+
+    }  // Exibir as animações de emoções uma por vez a cada pressão de botão
+    if (modo_sentimentos_ativo) {  // Verifique se o modo Sentimentos está ativo
+        switch (emocao_atual) {
+            case 0: 
+                run_visual_mode00(); 
+                break;  // Animação 0
+            case 1: 
+                run_visual_mode01(); 
+                break;  // Animação 1
+            case 2: 
+                run_visual_mode02(); 
+                break;  // Animação 2
+            case 3: 
+                run_visual_mode03(); 
+                break;  // Animação 3
+            case 4: 
+                run_visual_mode04(); 
+                break;  // Animação 4
         }
-        animacao_atual = (animacao_atual + 1) % 5;
-        visual_mode_active = false;
-        animacao_em_execucao = false;
+        
+        // Depois de exibir uma animação, desativamos o modo de sentimentos para aguardar a próxima pressão do botão
+        modo_sentimentos_ativo = false;
     }
     if (sound_mode_active2) {
         printf("Tocando 'Clair de Lune'!\n");
@@ -234,6 +264,7 @@ void main_loop() {
     if (monitor_ative) {  // Somente chama a função se estiver ativado
         monitoramento_mic();
     }
+
 }
 
 const uint limiar_1 = 700;     // Limiar para monitoramento
