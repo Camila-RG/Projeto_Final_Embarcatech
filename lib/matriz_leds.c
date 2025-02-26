@@ -354,3 +354,55 @@ void run_visual_mode4(){
         };
     show_animation(anim4, 4, 200);
 }
+
+void run_visual_mode00(){
+    static const uint32_t emocao0[1][25] = {
+        {
+            0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 
+            0x00000000, 0xffc107f8, 0x00000000, 0xffc107f8, 0x00000000, 
+            0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 
+            0xffc107f8, 0x00000000, 0x00000000, 0x00000000, 0xffc107f8, 
+            0x00000000, 0xffc107f8, 0xffc107f8, 0xffc107f8, 0x00000000
+        }
+        };
+    show_animation(emocao0, 4, 200);
+}
+
+void run_visual_mode01(){
+    static const uint32_t emocao1[1][25] = {
+        {
+            0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 
+            0x00000000, 0xffc107f8, 0x00000000, 0xffc107f8, 0x00000000, 
+            0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 
+            0x00000000, 0xffc107f8, 0xffc107f8, 0xffc107f8, 0x00000000, 
+            0xffc107f8, 0x00000000, 0x00000000, 0x00000000, 0xffc107f8
+        }
+        };
+    show_animation(emocao1, 4, 200);
+}
+
+void run_visual_mode02(){
+    static const uint32_t emocao2[1][25] = {
+        {
+            0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 
+            0x00000000, 0xffc107f8, 0x00000000, 0x00000000, 0x00000000, 
+            0x00000000, 0xffc107f8, 0xffc107f8, 0xffc107f8, 0x00000000, 
+            0xffc107f8, 0xffc107f8, 0xffc107f8, 0xffc107f8, 0x00000000, 
+            0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000
+        }
+        };
+    show_animation(emocao2, 4, 200);
+}
+
+void run_visual_mode03(){
+    static const uint32_t emocao3[1][25] = {
+        {
+            0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 
+            0xffc107f8, 0xffc107f8, 0xffc107f8, 0xffc107f8, 0x00000000, 
+            0x00000000, 0xffc107f8, 0xffc107f8, 0xffc107f8, 0x00000000, 
+            0x00000000, 0xffc107f8, 0x00000000, 0x00000000, 0x00000000, 
+            0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000
+        }
+        };
+    show_animation(emocao3, 4, 200);
+}

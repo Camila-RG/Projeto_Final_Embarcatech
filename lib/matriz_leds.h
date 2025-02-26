@@ -31,4 +31,10 @@ void run_visual_mode2();
 void run_visual_mode3();
 void run_visual_mode4();
 
+void run_visual_mode00();
+void run_visual_mode01();
+void run_visual_mode02();
+void run_visual_mode03();
+
+
 #endif // MATRIZ_LEDS_H

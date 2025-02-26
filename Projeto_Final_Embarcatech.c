@@ -38,8 +38,8 @@ typedef struct {
 // Menus e submenus
 Menu main_menu = {"MENU", {"Sensivel", "Estimulo", "Modo Alerta"}};
 Menu submenu1 = {"Sensivel", {"Modo Calmo", "Detector ruido", "Voltar"}};
-Menu submenu2 = {"Estimulo", {"Visuais", "Sonoros", "Voltar"}};
-Menu submenu3 = {"Falante", {"Sentimentos", "Acoes", "Voltar"}};
+Menu submenu2 = {"Estimulo", {"Visual", "Sonoro", "Voltar"}};
+Menu submenu3 = {"Falante", {"Sentimentos", "CRISE", "Voltar"}};
 
 Menu *current_menu = &main_menu;
 int menu_option = 0;
@@ -104,11 +104,23 @@ void joy_navigation() {
 // Função principal do loop, onde as ações são chamadas de forma não bloqueante
 
 #define MAX_REPETICOES 5     // Número máximo de repetições por animação
-
+bool sound_mode_active2 = false;
+bool sound_mode_active1 = false;
 bool animacao_em_execucao = false;
 bool monitor_ative = false;
+bool modo_ajuda = false;
+
 void monitoramento_mic();
 
+void modoajuda(){
+    gpio_put(LED_B_PIN, 0);
+    gpio_put(LED_G_PIN, 0);
+    for(int a=0; a < 7; a++){
+        gpio_put(LED_R_PIN, 1);
+        sleep_ms(500);
+        gpio_put(LED_R_PIN, 1);
+    }
+}
 
 void button_callback(uint gpio, uint32_t events) {
     static uint32_t last_button_time = 0;
@@ -129,9 +141,10 @@ void button_callback(uint gpio, uint32_t events) {
                 switch (menu_option) {
                     case 0:
                         printf("Modo Calmo ativado!\n");
+                        sound_mode_active2 = true;
                         break;
                     case 1:
-                        printf("Monitoramento de ruído ativado!\n");
+                        printf("Monitoramento de ruido ativado\n");
                         monitor_ative = true; // Ativar corretamente
                         break;
                     case 2:
@@ -140,13 +153,27 @@ void button_callback(uint gpio, uint32_t events) {
                 }
             } else if (current_menu == &submenu2) {
                 switch (menu_option) {
-                    case 0: visual_mode_active = true; break;
-                    case 1: sound_mode_active = true; break;
+                    case 0: 
+                        visual_mode_active = true;
+                        printf("Modo Visual ativo!\n");
+                     break;
+                    case 1: 
+                        sound_mode_active1 = true;
+                        printf("Modo Sonoro ativo!\n");
+                    break;
                     case 2: current_menu = &main_menu; break;
                 }
             } else if (current_menu == &submenu3) {
-                if (menu_option == 2) {
-                    current_menu = &main_menu;
+                switch (menu_option) {
+                    case 0: 
+                        
+                        printf("Modo Visual ativo!\n");
+                     break;
+                    case 1: 
+                        modo_ajuda = false;
+                        printf("Modo Sonoro ativo!\n");
+                    break;
+                    case 2: current_menu = &main_menu; break;
                 }
             }
             menu_option = 0;
@@ -181,9 +208,25 @@ void main_loop() {
         visual_mode_active = false;
         animacao_em_execucao = false;
     }
+    if (sound_mode_active2) {
+        printf("Tocando 'Clair de Lune'!\n");
+        play_song2();
+        sound_mode_active = false;  
+    }
+    if (sound_mode_active1) {
+        printf("Tocando música!\n");
+        play_song1();
+        sound_mode_active1 = false;  
+    }
 
     if (sound_mode_active) {
-        printf("Tocando 'Clair de Lune'!\n");
+        printf("Tocando música!\n");
+        play_song();
+        sound_mode_active = false;  
+    }
+    if (modo_ajuda) {
+        modoajuda();
+        printf("Modo ajuda ativo!\n");
         play_song();
         sound_mode_active = false;  
     }
@@ -192,7 +235,6 @@ void main_loop() {
         monitoramento_mic();
     }
 }
-
 
 const uint limiar_1 = 700;     // Limiar para monitoramento
 const uint limiar_2 = 2800;    // Limiar para alerta
@@ -216,6 +258,9 @@ void monitoramento_mic() {
 
             if (mic_value > limiar_1 && mic_value < limiar_2) {
                 ssd1306_draw_string(&oled, "Ruídos suportáveis", 10, 20);
+                gpio_put(LED_G_PIN, 1);
+                gpio_put(LED_R_PIN, 0);
+                gpio_put(LED_B_PIN, 0);
             } else if (mic_value > limiar_2) {
                 ssd1306_draw_string(&oled, "Ruído excessivo!", 10, 20);
                 ssd1306_draw_string(&oled, "Modo Calmo recomendado", 10, 35);
@@ -237,6 +282,9 @@ void monitoramento_mic() {
             monitor_ative = false;
             current_menu = &main_menu;  
             menu_option = 0;
+            gpio_put(LED_B_PIN, 0);
+            gpio_put(LED_G_PIN, 0);
+            gpio_put(LED_R_PIN, 0);
         }
 
         sleep_ms(100);
@@ -245,7 +293,6 @@ void monitoramento_mic() {
     // Agora o menu será desenhado após a execução
     draw_menu();
 }
-
 
 
 int main() {
@@ -259,7 +306,6 @@ int main() {
     gpio_set_irq_enabled_with_callback(JOY_BUTTON, GPIO_IRQ_EDGE_FALL, true, &button_callback);
 
     draw_menu();
-
     
     while (1) {
         joy_navigation();
