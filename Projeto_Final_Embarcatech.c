@@ -10,9 +10,13 @@
 #include "ws2812.pio.h"
 #include "lib/buzzer.h"
 #include "lib/matriz_leds.h"
+#include "hardware/timer.h"
 
 int animacao_contador = 0; // Contador para as repetições das animações
 int animacao_atual = 0;
+
+#define microfone 28
+
 // Tempo de debouncing
 static volatile uint32_t last_joy_button_time = 0;
 #define DEBOUNCE_TIME 100000 // 100ms de debounce
@@ -32,7 +36,7 @@ typedef struct {
 } Menu;
 
 // Menus e submenus
-Menu main_menu = {"MENU", {"1Sensivel", "2Estimulo", "3Modo Alerta"}};
+Menu main_menu = {"MENU", {"Sensivel", "Estimulo", "Modo Alerta"}};
 Menu submenu1 = {"Sensivel", {"Modo Calmo", "Detector ruido", "Voltar"}};
 Menu submenu2 = {"Estimulo", {"Visuais", "Sonoros", "Voltar"}};
 Menu submenu3 = {"Falante", {"Sentimentos", "Acoes", "Voltar"}};
@@ -74,77 +78,6 @@ void draw_menu() {
     ssd1306_send_data(&oled);
 }
 
-void main_loop();
-// Função de callback unificada para o botão do joystick e o botão B
-void button_callback(uint gpio, uint32_t events) {
-    static uint32_t last_button_time = 0;
-    uint32_t current_time = to_us_since_boot(get_absolute_time());
-
-    // Debouncing para garantir que a função não seja chamada múltiplas vezes rapidamente
-    if (current_time - last_button_time > DEBOUNCE_TIME) {
-        last_button_time = current_time;
-
-        if (gpio == JOY_BUTTON) {
-            // Lógica para o botão do joystick
-            if (current_menu == &main_menu) {
-                switch (menu_option) {
-                    case 0: current_menu = &submenu1; break;
-                    case 1: current_menu = &submenu2; break;
-                    case 2: current_menu = &submenu3; break;
-                }
-            } else if (current_menu == &submenu1) {
-                switch (menu_option) {
-                    case 0:
-                        gpio_put(LED_G_PIN, true);
-                        gpio_put(LED_R_PIN, true);
-                        gpio_put(LED_B_PIN, true);
-                        break;
-                    case 1:
-                        printf("Monitoramento de ruídos ativado!\n");
-                        break;
-                    case 2:
-                        current_menu = &main_menu;
-                        break;
-                }
-            } else if (current_menu == &submenu2) {
-                switch (menu_option) {
-                    case 0:
-                        printf("Modo visual ativado!\n");
-                        visual_mode_active = true; // Definir flag para visual mode
-                        break;
-                    case 1:
-                        sound_mode_active = true; // Definir flag para som
-                        break;
-                    case 2:
-                        current_menu = &main_menu;
-                        break;
-                }
-            } else if (current_menu == &submenu3) {
-                switch (menu_option) {
-                    case 0:
-                        printf("Sentimentos ativados!\n");
-                        break;
-                    case 1:
-                        printf("Ações ativadas!\n");
-                        break;
-                    case 2:
-                        current_menu = &main_menu;
-                        break;
-                }
-            }
-            menu_option = 0;
-            draw_menu();
-        }  if (gpio == BUTTON_A) {
-            sleep_ms(600);
-            // Incrementa o número da animação
-            animacao_atual = (animacao_atual + 1) % 5;  // Muda a animação entre 0 e 4
-            printf("Mudando para animação %d\n", animacao_atual);
-    
-            visual_mode_active = true; // Ativa o modo visual para exibir a animação
-        }
-    }
-}
-
 #define DEADZONE 500   // Zona morta para evitar leituras imprecisas
 #define NAV_DELAY 200
 
@@ -174,11 +107,46 @@ void joy_navigation() {
 
 bool animacao_em_execucao = false;
 
-// Função principal do loop, onde as animações são chamadas de forma não bloqueante
+void button_callback(uint gpio, uint32_t events) {
+    static uint32_t last_button_time = 0;
+    uint32_t current_time = to_us_since_boot(get_absolute_time());
+
+    if (current_time - last_button_time > DEBOUNCE_TIME) {
+        last_button_time = current_time;
+
+        if (gpio == JOY_BUTTON) {
+            // Lógica de navegação nos menus
+            if (current_menu == &main_menu) {
+                switch (menu_option) {
+                    case 0: current_menu = &submenu1; break;
+                    case 1: current_menu = &submenu2; break;
+                    case 2: current_menu = &submenu3; break;
+                }
+            } else if (current_menu == &submenu2) {
+                switch (menu_option) {
+                    case 0:
+                        printf("Modo visual ativado!\n");
+                        visual_mode_active = true;
+                        break;
+                    case 1:
+                        printf("Modo sonoro ativado!\n");
+                        sound_mode_active = true;
+                        break;
+                    case 2:
+                        current_menu = &main_menu;
+                        break;
+                }
+            }
+            menu_option = 0;
+            draw_menu();
+        }
+    }
+}
+
 void main_loop() {
-    if (visual_mode_active && !animacao_em_execucao) {  // Verifica se a animação já está em execução
-        animacao_em_execucao = true;  // Marca que a animação começou
-        // Repete a animação MAX_REPETICOES vezes
+    // Executa animações no modo visual
+    if (visual_mode_active && !animacao_em_execucao) {
+        animacao_em_execucao = true;
         for (int i = 0; i < MAX_REPETICOES; i++) {
             switch (animacao_atual) {
                 case 0: run_visual_mode0(); break;
@@ -187,40 +155,64 @@ void main_loop() {
                 case 3: run_visual_mode3(); break;
                 case 4: run_visual_mode4(); break;
             }
-
-            // Aguarda um pouco para a animação ser visível antes de repetir
-            sleep_ms(500);  // Espera de 500ms entre cada repetição da animação
+            sleep_ms(500);
         }
-
-        // Após repetir as animações, muda para a próxima animação
-        animacao_atual = (animacao_atual + 1) % 5;  // Muda a animação entre 0 e 4
-
-        visual_mode_active = false;  // Desativa o modo visual para evitar execução contínua
-        animacao_em_execucao = false; // Marca que a animação terminou
+        animacao_atual = (animacao_atual + 1) % 5;
+        visual_mode_active = false;
+        animacao_em_execucao = false;
     }
 
+    // Executa o som no modo sonoro
     if (sound_mode_active) {
-        // Chama o modo sonoro
-        play_calming_music(BUZZER_PIN);
-        sound_mode_active = false; // Reset flag
+        printf("Tocando som de 'Clair de Lune'!\n");
+          // Toca o som
+        sound_mode_active = false;  // Reseta o estado do modo sonoro
     }
 
-    joy_navigation(); // Atualiza a navegação no joystick
+    joy_navigation();
 }
+
+const uint limiar_1 = 3080;     // Limiar para monitoramento
+const uint limiar_2 = 4000;    // Limiar para alerta
+
+// Define o intervalo entre amostras (em microsegundos)
+
+uint64_t intervalo_us = 1000000; // amostras_por_segundo
+void monitoramento_mic() {
+    uint16_t mic_value = adc_read(); // Lê o ADC
+    ssd1306_fill(&oled, 0); // Limpa a tela antes de desenhar
+
+    if (mic_value > limiar_1 && mic_value < limiar_2) {
+        ssd1306_draw_string(&oled, "Ruídos suportáveis", 10, 20);
+    } else if (mic_value > limiar_2) {
+        ssd1306_draw_string(&oled, "Ruídos excessivos!", 10, 20);
+        ssd1306_draw_string(&oled, "Modo Calmo recomendado", 10, 35);
+    }
+
+    ssd1306_send_data(&oled); // Atualiza o display
+    sleep_us(intervalo_us);  // Delay para taxa de amostragem correta
+}
+
 
 int main() {
     setup_pio();
-    init_buzzer(); 
+    pwm_setup(BUZZER_PIN); 
+    
     setup();
-
+       
     // Configura a interrupção para o botão B e o botão do joystick na mesma função de callback
     gpio_set_irq_enabled_with_callback(BUTTON_A, GPIO_IRQ_EDGE_FALL, true, &button_callback);
     gpio_set_irq_enabled_with_callback(BUTTON_B, GPIO_IRQ_EDGE_FALL, true, &button_callback);
     gpio_set_irq_enabled_with_callback(JOY_BUTTON, GPIO_IRQ_EDGE_FALL, true, &button_callback);
 
+    adc_gpio_init(microfone);
+    adc_select_input(2);
+
     draw_menu();
 
+    
     while (1) {
+        void monitoramento_mic();
         joy_navigation();
         main_loop(); // Chama o loop principal
     }

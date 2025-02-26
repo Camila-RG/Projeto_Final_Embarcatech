@@ -1,5 +1,6 @@
 #include "init.h"
 #include "lib/ssd1306.h"
+#include "hardware/adc.h"
 
 // Inicializa o display
 extern ssd1306_t oled;
