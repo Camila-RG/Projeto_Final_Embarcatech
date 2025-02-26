@@ -37,17 +37,17 @@ O menu inicial apresenta três opções principais:
 ## Conexões dos Periféricos
 | Componente | Pino RP2040 |
 |------------|------------|
-| LED Vermelho | GP13 |
-| LED Azul | GP12 |
-| LED Verde | GP11 |
-| Buzzer | GP21 |
-| Microfone | GP28 |
-| Matriz de LEDs WS2812 | GP7 |
 | Botão A | GP5 |
+| Matriz de LEDs WS2812 | GP7 |
+| LED Verde | GP11 |
+| LED Azul | GP12 |
+| LED Vermelho | GP13 |
+| Display ssd1306 | GP14 e 15 |
+| Buzzer | GP21 |
 | Joystick Botão | GP22 |
-| Joystick Eixo Y | GP27 |
 | Joystick Eixo X | GP26 |
-
+| Joystick Eixo Y | GP27 |
+| Microfone | GP28 |
 ## Linguagem utilizada
 - **C**
 
@@ -73,6 +73,9 @@ O Sensin foi criado com o propósito de proporcionar uma ferramenta acessível e
 
 ## Contato
 Caso tenha dúvidas ou sugestões, entre em contato através do [GitHub](https://github.com/Camila-RG/Projeto_Final_Embarcatech).
+
+## Licença
+Este projeto está licenciado sob a **MIT License** - veja o arquivo [LICENSE](https://github.com/Camila-RG/Projeto_Final_Embarcatech/blob/main/LICENSE) para mais detalhes.
 
 ---
 Desenvolvido por **Camila Ramos Gomes**.
