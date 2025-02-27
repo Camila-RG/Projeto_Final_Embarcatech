@@ -12,16 +12,22 @@
 #include "lib/matriz_leds.h"
 #include "hardware/timer.h"
 
-int animacao_contador = 0; // Contador para as repetições das animações
+// Contador para as repetições das animações
+int animacao_contador = 0; 
 int animacao_atual = 0;
 int emocao_atual = 0;
 
+const uint limiar_1 = 700;     // Limiar para monitoramento
+const uint limiar_2 = 2800;    // Limiar para alerta
+
 #define microfone 28
+#define DEADZONE 500   // Zona morta para evitar leituras imprecisas
+#define NAV_DELAY 200
+#define INTERVALO_US 100000 // Define o intervalo entre amostras
 
 // Tempo de debouncing
 static volatile uint32_t last_joy_button_time = 0;
 #define DEBOUNCE_TIME 100000 // 100ms de debounce
-
 int estado_atual_botao_a = 1;  // Estado inicial do botão A
 static volatile uint32_t last_time = 0; // Armazena o tempo do último evento (em microssegundos)
 ssd1306_t oled;
@@ -30,6 +36,16 @@ ssd1306_t oled;
 bool visual_mode_active = false;
 bool visual_mode_active1 = false;
 bool sound_mode_active = false;
+
+#define MAX_REPETICOES 5     // Número máximo de repetições por animação
+bool sound_mode_active2 = false;
+bool sound_mode_active1 = false;
+bool animacao_em_execucao = false;
+bool monitor_ative = false;
+bool modo_ajuda = false;
+bool emocao_em_execucao = false;
+bool modo_sentimentos_ativo = false;  // Flag para o modo Sentimentos
+
 
 // Estrutura para os menus
 typedef struct {
@@ -80,8 +96,6 @@ void draw_menu() {
     ssd1306_send_data(&oled);
 }
 
-#define DEADZONE 500   // Zona morta para evitar leituras imprecisas
-#define NAV_DELAY 200
 
 void joy_navigation() {
     static uint32_t last_move_time = 0;
@@ -105,22 +119,15 @@ void joy_navigation() {
 
 // Função principal do loop, onde as ações são chamadas de forma não bloqueante
 
-#define MAX_REPETICOES 5     // Número máximo de repetições por animação
-bool sound_mode_active2 = false;
-bool sound_mode_active1 = false;
-bool animacao_em_execucao = false;
-bool monitor_ative = false;
-bool modo_ajuda = false;
-bool emocao_em_execucao = false;
-bool modo_sentimentos_ativo = false;  // Flag para o modo Sentimentos
 
 void monitoramento_mic();
 
 void modoajuda(){
     gpio_put(LED_B_PIN, 0);
+    gpio_put(LED_R_PIN, 1);
     gpio_put(LED_G_PIN, 0);
     for(int a=0; a < 7; a++){
-        gpio_put(LED_R_PIN, 1);
+        gpio_put(LED_R_PIN, 0);
         sleep_ms(500);
         gpio_put(LED_R_PIN, 1);
     }
@@ -276,11 +283,7 @@ void main_loop() {
 
 }
 
-const uint limiar_1 = 700;     // Limiar para monitoramento
-const uint limiar_2 = 2800;    // Limiar para alerta
 
-// Define o intervalo entre amostras
-#define INTERVALO_US 100000
 void monitoramento_mic() {
     if (!monitor_ative) {
         return;
