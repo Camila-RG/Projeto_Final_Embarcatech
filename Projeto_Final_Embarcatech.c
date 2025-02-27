@@ -178,6 +178,7 @@ void button_callback(uint gpio, uint32_t events) {
                         printf("Modo Sonoro ativo!\n");
                     break;
                     case 2: current_menu = &main_menu; break;
+                    
                 }
                 // Alterna a animação de emoção
             if (modo_sentimentos_ativo) {
@@ -200,21 +201,29 @@ void button_callback(uint gpio, uint32_t events) {
 
 void main_loop() {
     joy_navigation();
-
     if (visual_mode_active && !animacao_em_execucao) {
         animacao_em_execucao = true;
-        for (int i = 0; i < MAX_REPETICOES; i++) {
-            switch (animacao_atual) {
-                case 0: run_visual_mode0(); break;
-                case 1: run_visual_mode1(); break;
-                case 2: run_visual_mode2(); break;
-                case 3: run_visual_mode3(); break;
-                case 4: run_visual_mode4(); break;
-            }
-            sleep_ms(500);
-        }animacao_atual = (animacao_atual + 1) % 5;  // Alterna a animação
-        emocao_em_execucao = false;
-
+        switch (animacao_atual) {
+            case 0: run_visual_mode0();
+            animacao_em_execucao = false; 
+            break;
+            case 1: run_visual_mode1();
+            animacao_em_execucao = false; 
+            break;
+            case 2: run_visual_mode2(); 
+            animacao_em_execucao = false; 
+            break;
+            case 3: run_visual_mode3(); 
+            animacao_em_execucao = false; 
+            break;
+            case 4: run_visual_mode4(); 
+            animacao_em_execucao = false; 
+            break;
+        }
+        sleep_ms(500);  // Tempo para a animação ser visível antes de alternar
+        animacao_atual = (animacao_atual + 1) % 5;  // Alterna a animação
+        animacao_em_execucao = false;  // Permite que a animação mude novamente no próximo ciclo
+    
     }  // Exibir as animações de emoções uma por vez a cada pressão de botão
     if (modo_sentimentos_ativo) {  // Verifique se o modo Sentimentos está ativo
         switch (emocao_atual) {
