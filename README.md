@@ -69,7 +69,7 @@ O menu inicial apresenta três opções principais:
 O Sensin foi criado com o propósito de proporcionar uma ferramenta acessível e eficiente para pessoas autistas se autorregularem em diferentes situações, promovendo bem-estar e autonomia.
 
 ## Vídeo Explicativo
-[Assista ao vídeo explicativo do projeto]()
+[Assista ao vídeo explicativo do projeto](https://youtu.be/xaVh2IheoE8?si=FJ2tyCtoIUaFb1SD)
 
 ## Contato
 Caso tenha dúvidas ou sugestões, entre em contato através do [GitHub](https://github.com/Camila-RG/Projeto_Final_Embarcatech).
